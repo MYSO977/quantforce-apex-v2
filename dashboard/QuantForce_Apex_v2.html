@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QuantForce Apex v2 — 量力实验室</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #090e1a; color: #c8d8f0; font-family: 'IBM Plex Mono', 'Courier New', monospace; min-height: 100vh; }
+
+  .header { background: linear-gradient(135deg, #0a1628, #0d2040, #091420); border-bottom: 1px solid #1a3050; padding: 20px 28px 0; }
+  .header-top { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
+  .logo { width: 36px; height: 36px; background: linear-gradient(135deg, #00ff88, #00aaff); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .title { font-size: 20px; font-weight: 700; color: #fff; letter-spacing: 2px; }
+  .subtitle { font-size: 11px; color: #4a7090; letter-spacing: 3px; }
+  .badge-live { background: #00ff8820; color: #00ff88; border: 1px solid #00ff8840; border-radius: 4px; padding: 3px 10px; font-size: 11px; margin-left: auto; }
+  .badge-date { background: #ffffff10; color: #4a7090; border-radius: 4px; padding: 3px 10px; font-size: 11px; margin-left: 8px; }
+
+  .tabs { display: flex; gap: 0; }
+  .tab { background: transparent; color: #4a7090; border: none; border-bottom: 2px solid transparent; padding: 10px 18px; font-size: 12px; cursor: pointer; letter-spacing: 1px; text-transform: uppercase; font-family: inherit; transition: all 0.2s; }
+  .tab.active { background: #1a3050; color: #00aaff; border-bottom: 2px solid #00aaff; }
+
+  .content { padding: 24px 28px; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 2fr; gap: 20px; }
+  .grid-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+
+  .card { background: #0d1e35; border: 1px solid #1a3050; border-radius: 10px; padding: 20px; }
+  .card-sm { background: #060d1a; border-radius: 8px; padding: 18px 20px; }
+
+  .label { font-size: 11px; color: #4a7090; margin-bottom: 6px; letter-spacing: 1px; }
+  .label-sec { font-size: 12px; color: #4a7090; letter-spacing: 2px; margin-bottom: 16px; }
+  .val-lg { font-size: 22px; font-weight: 700; }
+  .val-sm { font-size: 11px; color: #4a7090; margin-top: 4px; }
+
+  .stat-card { background: #0d1e35; border: 1px solid #1a3050; border-radius: 10px; padding: 18px 20px; }
+
+  /* Flow */
+  .flow { background: #0d1e35; border: 1px solid #1a3050; border-radius: 10px; padding: 24px; margin-bottom: 20px; }
+  .flow-row { display: flex; align-items: center; gap: 0; overflow-x: auto; padding: 8px 0; flex-wrap: nowrap; }
+  .flow-node { background: #091420; border: 1px solid #1a3050; border-radius: 8px; padding: 12px 14px; text-align: center; flex-shrink: 0; min-width: 90px; }
+  .flow-icon { font-size: 20px; }
+  .flow-label { font-size: 11px; color: #c8d8f0; margin-top: 4px; }
+  .flow-sub { font-size: 10px; color: #4a7090; }
+  .flow-arrow { color: #1a3050; font-size: 24px; padding: 0 8px; flex-shrink: 0; }
+  .flow-note { margin-top: 16px; background: #060d1a; border-radius: 8px; padding: 12px 16px; border: 1px solid #1a3050; font-size: 11px; color: #4a7090; }
+
+  /* Email preview */
+  .email-box { background: #060d1a; border-radius: 8px; padding: 20px; font-family: monospace; font-size: 12px; line-height: 1.8; border: 1px solid #1a3050; }
+
+  /* Account cards */
+  .acc-card { background: #0d1e35; border-radius: 10px; padding: 24px; }
+  .acc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+  .acc-mini { background: #060d1a; border-radius: 6px; padding: 12px; }
+  .acc-mini .label { font-size: 10px; margin-bottom: 4px; }
+  .acc-mini .val { font-size: 18px; font-weight: 700; }
+  .pool-box { background: #060d1a; border-radius: 6px; padding: 12px; margin-bottom: 14px; }
+  .rule-item { display: flex; gap: 8px; margin-bottom: 6px; font-size: 11px; }
+  .rr-bar { margin-top: 16px; background: #091420; border-radius: 6px; padding: 10px; display: flex; justify-content: space-between; }
+
+  /* Signal filter */
+  .filter-list { }
+  .filter-row { display: flex; gap: 12px; margin-bottom: 8px; }
+  .filter-id { width: 32px; height: 32px; background: #0d1e35; border: 1px solid #1a3050; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #00aaff; font-weight: 700; flex-shrink: 0; }
+  .filter-id.out { background: #003322; border-color: #00ff8840; color: #00ff88; }
+  .filter-connector { width: 1px; height: 14px; background: #1a3050; margin: 3px auto; }
+  .filter-card { background: #0d1e35; border: 1px solid #1a3050; border-radius: 8px; padding: 10px 14px; flex: 1; }
+  .filter-name { font-size: 12px; color: #c8d8f0; font-weight: 600; }
+  .filter-desc { font-size: 10px; color: #4a7090; margin-top: 3px; }
+
+  /* Calc cards */
+  .calc-card { background: #0d1e35; border-radius: 10px; padding: 20px; margin-bottom: 16px; }
+  .calc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .calc-mini { background: #060d1a; border-radius: 6px; padding: 10px; }
+  .calc-mini .label { font-size: 10px; margin-bottom: 4px; }
+  .calc-mini .val { font-size: 13px; font-weight: 600; }
+
+  /* Nodes */
+  .node-card { background: #0d1e35; border: 1px solid #1a3050; border-radius: 10px; padding: 20px; cursor: pointer; transition: border-color 0.2s; }
+  .node-rank { border-radius: 6px; padding: 6px 10px; font-size: 14px; font-weight: 700; }
+  .node-task { font-size: 10px; color: #4a7090; margin-bottom: 4px; padding-left: 8px; border-left: 1px solid #1a3050; }
+  .lora-flow { margin-top: 20px; background: #0d1e35; border: 1px solid #ff880030; border-radius: 10px; padding: 20px; }
+  .lora-step { background: #060d1a; border: 1px solid #ff880030; border-radius: 6px; padding: 8px 14px; font-size: 11px; color: #ff8800; }
+
+  /* Plugins */
+  .plugin-row { background: #0d1e35; border: 1px solid #1a3050; border-radius: 8px; padding: 14px 18px; margin-bottom: 10px; display: flex; align-items: center; gap: 14px; }
+  .plugin-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .core-item { background: #060d1a; border-radius: 6px; padding: 8px 12px; margin-bottom: 8px; font-size: 11px; color: #c8d8f0; border-left: 2px solid #00aaff; }
+  .code-box { background: #060d1a; border-radius: 8px; padding: 18px; font-family: monospace; font-size: 11px; line-height: 1.9; color: #c8d8f0; overflow-x: auto; }
+
+  /* Roadmap */
+  .phase-row { display: flex; gap: 16px; margin-bottom: 20px; }
+  .phase-num { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; flex-shrink: 0; }
+  .phase-card { background: #0d1e35; border: 1px solid #1a3050; border-radius: 10px; padding: 20px; flex: 1; }
+  .phase-items { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+  .phase-item { background: #060d1a; border: 1px solid #1a3050; border-radius: 6px; padding: 6px 12px; font-size: 11px; color: #c8d8f0; }
+  .phase-badge { border-radius: 4px; padding: 2px 10px; font-size: 10px; margin-left: 10px; }
+  .phase-line { width: 2px; background: #1a3050; flex-shrink: 0; min-height: 20px; margin: 4px 0; align-self: stretch; margin-left: 17px; }
+
+  .c-green { color: #00ff88; } .c-blue { color: #00aaff; } .c-orange { color: #ff8800; }
+  .c-red { color: #ff4444; } .c-gray { color: #4a7090; } .c-white { color: #fff; }
+  .bg-green { background: #00ff8820; } .bg-blue { background: #00aaff20; }
+  .bg-orange { background: #ff880020; } .bg-dark { background: #060d1a; }
+
+  .sep { height: 20px; }
+  .flex { display: flex; } .flex-center { align-items: center; } .gap8 { gap: 8px; } .gap10 { gap: 10px; } .gap12 { gap: 12px; }
+  .ml-auto { margin-left: auto; }
+  .fw7 { font-weight: 700; } .fs13 { font-size: 13px; } .fs11 { font-size: 11px; } .fs10 { font-size: 10px; }
+  .mb16 { margin-bottom: 16px; } .mb12 { margin-bottom: 12px; } .mb8 { margin-bottom: 8px; }
+  .br4 { border-radius: 4px; } .br6 { border-radius: 6px; } .br8 { border-radius: 8px; }
+  .p8 { padding: 8px; } .p10 { padding: 10px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div class="logo">⚡</div>
+    <div>
+      <div class="title">QUANTFORCE APEX v2</div>
+      <div class="subtitle">量力实验室 · 分布式联邦学习量化系统</div>
+    </div>
+    <span class="badge-live">● LIVE</span>
+    <span class="badge-date">2026-04-26</span>
+  </div>
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('overview')">总览</button>
+    <button class="tab" onclick="showTab('accounts')">账户</button>
+    <button class="tab" onclick="showTab('signal')">信号链</button>
+    <button class="tab" onclick="showTab('nodes')">节点</button>
+    <button class="tab" onclick="showTab('plugins')">插件</button>
+    <button class="tab" onclick="showTab('roadmap')">路线图</button>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- OVERVIEW -->
+  <div id="panel-overview" class="panel active">
+    <div class="grid3">
+      <div class="stat-card"><div class="label">总资产（估算）</div><div class="val-lg c-green" id="rt-total-asset">$25,400</div><div class="val-sm">$18K CAD + $1.2K USD</div></div>
+      <div class="stat-card"><div class="label">月中注入</div><div class="val-lg c-blue">$50,000 USD</div><div class="val-sm">IB保证金账户升级</div></div>
+      <div class="stat-card"><div class="label">活跃节点</div><div class="val-lg c-orange" id="rt-nodes">5 / 5</div><div class="val-sm">.15已退役，.143接管</div></div>
+    </div>
+
+    <div class="flow">
+      <div class="label-sec">▸ 系统数据流</div>
+      <div class="flow-row">
+        <div class="flow-node"><div class="flow-icon">📡</div><div class="flow-label">市场数据</div><div class="flow-sub">yfinance</div></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node"><div class="flow-icon">🔍</div><div class="flow-label">.143扫描器</div><div class="flow-sub">tech+news</div></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node"><div class="flow-icon">🧠</div><div class="flow-label">.18信号融合</div><div class="flow-sub">signal_fusion</div></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node"><div class="flow-icon">🛡</div><div class="flow-label">风控门</div><div class="flow-sub">risk_gate</div></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node"><div class="flow-icon">✉</div><div class="flow-label">.102邮件</div><div class="flow-sub">手动执行</div></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node"><div class="flow-icon">🏦</div><div class="flow-label">.11执行器</div><div class="flow-sub">IB下单</div></div>
+      </div>
+      <div class="flow-note"><span class="c-orange">▸ 联邦进化循环（每日收盘后）</span>：.143/.18 计算LoRA delta → .11 FedAvg聚合 → 全局权重广播 → 策略参数自动进化</div>
+    </div>
+
+    <div class="card">
+      <div class="label-sec">▸ 邮件信号预览（手动执行阶段）</div>
+      <div class="email-box">
+        <div class="c-green">═══════════════════════════════════════</div>
+        <div class="c-blue">📊 QuantForce Labs — 交易信号通知</div>
+        <div class="c-green">═══════════════════════════════════════</div>
+        <div class="c-gray">账户：IB USD 现金账户  |  2026-04-26 14:32</div>
+        <br>
+        <div><span class="c-gray">标的：</span><span class="c-white">ACMR（美元）</span></div>
+        <div><span class="c-gray">方向：</span><span class="c-green">▲ 多头 BUY</span></div>
+        <div><span class="c-gray">仓位：</span><span class="c-white">$400 USD（XX股）</span></div>
+        <div><span class="c-gray">买入：</span><span class="c-white">$XX.XX（限价）</span></div>
+        <div><span class="c-gray">止损：</span><span class="c-red">$XX.XX（-X.X%）</span></div>
+        <div><span class="c-gray">止盈：</span><span class="c-green">$XX.XX（+X.X%）</span></div>
+        <div><span class="c-gray">盈亏比：</span><span class="c-orange">1 : 5.0</span><span class="c-gray">  |  置信度：</span><span class="c-blue">8.3/10</span></div>
+        <br>
+        <div class="c-green">✅ 三周期共振  ✅ RVOL 2.34  ✅ Groq 8.1</div>
+        <div class="c-orange">⚠️ 现金账户：T+1结算，请勿当日卖出</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ACCOUNTS -->
+  <div id="panel-accounts" class="panel">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;">
+
+      <div class="acc-card" style="border:1px solid #cc220040;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+          <div style="width:8px;height:8px;background:#cc2200;border-radius:50%;"></div>
+          <div style="font-size:15px;font-weight:700;color:#fff;">BMO RESP</div>
+          <div style="margin-left:auto;background:#cc220020;color:#cc2200;border-radius:4px;padding:2px 8px;font-size:11px;">CAD</div>
+        </div>
+        <div class="acc-grid">
+          <div class="acc-mini"><div class="label">账户余额</div><div class="val" style="color:#cc2200;">$18,000</div></div>
+          <div class="acc-mini"><div class="label">单笔仓位</div><div class="val c-white">$3,000</div></div>
+        </div>
+        <div class="pool-box"><div class="label fs10">股票池</div><div class="fs11 c-white">基本面前1000 → 换手率前100</div></div>
+        <div class="label fs10" style="margin-bottom:8px;">规则约束</div>
+        <div class="rule-item"><span class="c-red">▸</span><span class="fs11">固定$10手续费/次（双边$20）</span></div>
+        <div class="rule-item"><span class="c-red">▸</span><span class="fs11">仅TSX/TSX-V加元计价标的</span></div>
+        <div class="rule-item"><span class="c-red">▸</span><span class="fs11">不可提现（RESP限制）</span></div>
+        <div class="rule-item"><span class="c-red">▸</span><span class="fs11">止损空间≥3%（稀释手续费）</span></div>
+        <div class="rr-bar"><span class="fs11 c-gray">盈亏比</span><span style="font-size:13px;font-weight:700;color:#00ff88;">1 : 5</span></div>
+      </div>
+
+      <div class="acc-card" style="border:1px solid #0055cc40;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+          <div style="width:8px;height:8px;background:#0055cc;border-radius:50%;"></div>
+          <div style="font-size:15px;font-weight:700;color:#fff;">IB 现金账户</div>
+          <div style="margin-left:auto;background:#0055cc20;color:#0055cc;border-radius:4px;padding:2px 8px;font-size:11px;">USD</div>
+        </div>
+        <div class="acc-grid">
+          <div class="acc-mini"><div class="label">账户余额</div><div class="val" style="color:#0055cc;">$1,200</div></div>
+          <div class="acc-mini"><div class="label">单笔仓位</div><div class="val c-white">$400</div></div>
+        </div>
+        <div class="pool-box"><div class="label fs10">股票池</div><div class="fs11 c-white">Russell 2000 → 换手率前100</div></div>
+        <div class="label fs10" style="margin-bottom:8px;">规则约束</div>
+        <div class="rule-item"><span class="c-red">▸</span><span class="fs11">T+1结算（GFV严格防护）</span></div>
+        <div class="rule-item"><span class="c-red">▸</span><span class="fs11">最多3笔同时持仓（$400×3）</span></div>
+        <div class="rule-item"><span class="c-red">▸</span><span class="fs11">不可当日高频买卖同一标的</span></div>
+        <div class="rule-item"><span class="c-orange">▸</span><span class="fs11">月中升级至保证金账户</span></div>
+        <div class="rr-bar"><span class="fs11 c-gray">盈亏比</span><span style="font-size:13px;font-weight:700;color:#00ff88;">1 : 5</span></div>
+      </div>
+
+      <div class="acc-card" style="border:1px solid #1a3050;opacity:0.85;">
+        <div style="background:#ff880020;color:#ff8800;border-radius:4px;padding:3px 10px;font-size:10px;display:inline-block;margin-bottom:12px;letter-spacing:1px;">月中升级</div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+          <div style="width:8px;height:8px;background:#006644;border-radius:50%;"></div>
+          <div style="font-size:15px;font-weight:700;color:#fff;">IB 保证金账户</div>
+          <div style="margin-left:auto;background:#00664420;color:#00ff88;border-radius:4px;padding:2px 8px;font-size:11px;">USD</div>
+        </div>
+        <div class="acc-grid">
+          <div class="acc-mini"><div class="label">注入资金</div><div class="val c-green">$50,000</div></div>
+          <div class="acc-mini"><div class="label">单笔仓位</div><div class="val c-white">ATR动态</div></div>
+        </div>
+        <div class="pool-box"><div class="label fs10">股票池</div><div class="fs11 c-white">Russell 2000 + 多品种扩展</div></div>
+        <div class="label fs10" style="margin-bottom:8px;">新增能力</div>
+        <div class="rule-item"><span class="c-green">▸</span><span class="fs11">支持双向交易（做多+做空）</span></div>
+        <div class="rule-item"><span class="c-green">▸</span><span class="fs11">多策略抽屉插件架构</span></div>
+        <div class="rule-item"><span class="c-green">▸</span><span class="fs11">ATR动态仓位sizing</span></div>
+        <div class="rule-item"><span class="c-green">▸</span><span class="fs11">2:1隔夜 / 4:1日内杠杆</span></div>
+        <div class="rr-bar"><span class="fs11 c-gray">盈亏比</span><span style="font-size:13px;font-weight:700;color:#00ff88;">1 : 5</span></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- SIGNAL -->
+  <div id="panel-signal" class="panel">
+    <div class="grid2">
+      <div>
+        <div class="label-sec">▸ 五层过滤漏斗</div>
+        <div class="filter-list">
+          <div class="filter-row"><div style="display:flex;flex-direction:column;align-items:center;"><div class="filter-id">L0</div><div class="filter-connector"></div></div><div class="filter-card"><div class="filter-name">L0 基本面</div><div class="filter-desc">CAD:基本面前1000 / USD:Russell 2000</div></div></div>
+          <div class="filter-row"><div style="display:flex;flex-direction:column;align-items:center;"><div class="filter-id">L1</div><div class="filter-connector"></div></div><div class="filter-card"><div class="filter-name">L1 流动性</div><div class="filter-desc">近三日换手率前100（动态每日更新）</div></div></div>
+          <div class="filter-row"><div style="display:flex;flex-direction:column;align-items:center;"><div class="filter-id">L2</div><div class="filter-connector"></div></div><div class="filter-card"><div class="filter-name">L2 多周期共振</div><div class="filter-desc">日线+小时线+5分钟线 EMA9>EMA20, 收>VWAP, MACD>0</div></div></div>
+          <div class="filter-row"><div style="display:flex;flex-direction:column;align-items:center;"><div class="filter-id">L3</div><div class="filter-connector"></div></div><div class="filter-card"><div class="filter-name">L3 1分钟触发</div><div class="filter-desc">EMA9 > VWAP > 开盘价，RVOL > 1.5</div></div></div>
+          <div class="filter-row"><div style="display:flex;flex-direction:column;align-items:center;"><div class="filter-id">L4</div><div class="filter-connector"></div></div><div class="filter-card"><div class="filter-name">L4 新闻评分</div><div class="filter-desc">Groq评分 ≥ 7.5（llama-3.1-8b-instant）</div></div></div>
+          <div class="filter-row"><div style="display:flex;flex-direction:column;align-items:center;"><div class="filter-id out">OUT</div></div><div class="filter-card" style="border-color:#00ff8820;"><div class="filter-name c-green">✉ 信号输出</div><div class="filter-desc">邮件通知 → 手动执行</div></div></div>
+        </div>
+      </div>
+      <div>
+        <div class="label-sec">▸ 仓位计算（含手续费）</div>
+
+        <div class="calc-card" style="border:1px solid #cc220040;">
+          <div style="font-size:13px;font-weight:700;color:#cc2200;margin-bottom:16px;">BMO RESP 加元</div>
+          <div class="calc-grid">
+            <div class="calc-mini"><div class="label">仓位</div><div class="val c-white">$3,000 CAD</div></div>
+            <div class="calc-mini"><div class="label">毛止损(1:5)</div><div class="val c-white">$500</div></div>
+            <div class="calc-mini"><div class="label">手续费双边</div><div class="val c-orange">$20 CAD</div></div>
+            <div class="calc-mini"><div class="label">净止损</div><div class="val c-red">~$480</div></div>
+            <div class="calc-mini"><div class="label">净止盈</div><div class="val c-green">~$2,480</div></div>
+            <div class="calc-mini"><div class="label">手续费占比</div><div class="val c-orange">1.33%</div></div>
+          </div>
+        </div>
+
+        <div class="calc-card" style="border:1px solid #0055cc40;">
+          <div style="font-size:13px;font-weight:700;color:#0055cc;margin-bottom:16px;">IB 现金 美元</div>
+          <div class="calc-grid">
+            <div class="calc-mini"><div class="label">仓位</div><div class="val c-white">$400 USD</div></div>
+            <div class="calc-mini"><div class="label">毛止损(1:5)</div><div class="val c-white">~$67</div></div>
+            <div class="calc-mini"><div class="label">手续费双边</div><div class="val c-orange">~$2</div></div>
+            <div class="calc-mini"><div class="label">净止损</div><div class="val c-red">~$65</div></div>
+            <div class="calc-mini"><div class="label">净止盈</div><div class="val c-green">~$330</div></div>
+            <div class="calc-mini"><div class="label">手续费占比</div><div class="val c-green">0.5%</div></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="label-sec" style="margin-bottom:12px;">▸ 初期策略原则</div>
+          <div class="rule-item"><span class="c-blue">▸</span><span class="fs11">宽止损小金额 → 账户盈利后缩止损、放大仓位</span></div>
+          <div class="rule-item"><span class="c-blue">▸</span><span class="fs11">总风险额不变（仓位↑ × 止损幅度↓ = 常数）</span></div>
+          <div class="rule-item"><span class="c-blue">▸</span><span class="fs11">持仓3-5交易日，避免高频交易</span></div>
+          <div class="rule-item"><span class="c-blue">▸</span><span class="fs11">BMO止损幅度≥3%（稀释$20固定手续费）</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NODES -->
+  <div id="panel-nodes" class="panel">
+    <div class="label-sec">▸ 节点矩阵（按算力排名）</div>
+    <div class="grid-cards">
+
+      <div class="node-card" style="border-color:#00ff8840;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+          <div class="node-rank" style="background:#00ff8820;color:#00ff88;">#1</div>
+          <div><div style="font-size:13px;font-weight:700;color:#fff;">Dell OptiPlex 7060</div><div class="fs10 c-gray">192.168.0.11</div></div>
+          <div style="margin-left:auto;background:#00ff8820;color:#00ff88;border-radius:4px;padding:2px 8px;font-size:10px;">网线</div>
+        </div>
+        <div style="font-size:11px;font-weight:600;color:#00ff88;margin-bottom:10px;">执行器 + LoRA聚合</div>
+        <div class="node-task">ib_executor_v2.py</div>
+        <div class="node-task">ZMQ PULL :5557</div>
+        <div class="node-task">LoRA FedAvg服务器</div>
+        <div class="node-task">ZMQ PULL :5560（聚合接收）</div>
+      </div>
+
+      <div class="node-card" style="border-color:#00aaff40;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+          <div class="node-rank" style="background:#00aaff20;color:#00aaff;">#2</div>
+          <div><div style="font-size:13px;font-weight:700;color:#fff;">Acer XC-605</div><div class="fs10 c-gray">192.168.0.18</div></div>
+          <div style="margin-left:auto;background:#ff880020;color:#ff8800;border-radius:4px;padding:2px 8px;font-size:10px;">WiFi</div>
+        </div>
+        <div style="font-size:11px;font-weight:600;color:#00aaff;margin-bottom:10px;">中央大脑</div>
+        <div class="node-task">signal_fusion.py / risk_gate.py</div>
+        <div class="node-task">PostgreSQL / Grafana :3000</div>
+        <div class="node-task">IB Gateway :4002 (IBC)</div>
+        <div class="node-task">ZMQ PUB :5561（全局广播）</div>
+      </div>
+
+      <div class="node-card" style="border-color:#ff880040;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+          <div class="node-rank" style="background:#ff880020;color:#ff8800;">#3</div>
+          <div><div style="font-size:13px;font-weight:700;color:#fff;">Lenovo Compute</div><div class="fs10 c-gray">192.168.0.143</div></div>
+          <div style="margin-left:auto;background:#ff880020;color:#ff8800;border-radius:4px;padding:2px 8px;font-size:10px;">WiFi</div>
+        </div>
+        <div style="font-size:11px;font-weight:600;color:#ff8800;margin-bottom:10px;">扫描器 + LoRA训练节点A</div>
+        <div class="node-task">tech_scanner.py</div>
+        <div class="node-task">news_scanner.py / Groq评分</div>
+        <div class="node-task">qwen2.5:0.5b (Ollama)</div>
+        <div class="node-task">venv: /dev/shm/qf_venv（重启重建）</div>
+      </div>
+
+      <div class="node-card" style="border-color:#aa44ff40;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+          <div class="node-rank" style="background:#aa44ff20;color:#aa44ff;">#4</div>
+          <div><div style="font-size:13px;font-weight:700;color:#fff;">Asus L406M</div><div class="fs10 c-gray">192.168.0.101</div></div>
+          <div style="margin-left:auto;background:#ff880020;color:#ff8800;border-radius:4px;padding:2px 8px;font-size:10px;">WiFi</div>
+        </div>
+        <div style="font-size:11px;font-weight:600;color:#aa44ff;margin-bottom:10px;">哨兵 + 聚合监控</div>
+        <div class="node-task">watchdog.py（ping检活）</div>
+        <div class="node-task">node_monitor.py :9100</div>
+        <div class="node-task">聚合质量监控</div>
+        <div class="node-task">eMMC / 80%充电保护</div>
+      </div>
+
+      <div class="node-card" style="border-color:#ff448840;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+          <div class="node-rank" style="background:#ff448820;color:#ff4488;">#5</div>
+          <div><div style="font-size:13px;font-weight:700;color:#fff;">Asus L410M</div><div class="fs10 c-gray">192.168.0.102</div></div>
+          <div style="margin-left:auto;background:#ff880020;color:#ff8800;border-radius:4px;padding:2px 8px;font-size:10px;">WiFi</div>
+        </div>
+        <div style="font-size:11px;font-weight:600;color:#ff4488;margin-bottom:10px;">信使</div>
+        <div class="node-task">email_listener.py（Gmail IMAP）</div>
+        <div class="node-task">notify_worker.py</div>
+        <div class="node-task">email_notifier.py（信号发送）</div>
+        <div class="node-task">eMMC / 低swappiness=10</div>
+      </div>
+
+    </div>
+
+    <div class="lora-flow">
+      <div style="font-size:12px;color:#ff8800;letter-spacing:2px;margin-bottom:14px;">▸ 联邦LoRA聚合流程</div>
+      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+        <div class="lora-step">.143 训练节点A</div>
+        <span class="c-gray" style="font-size:20px;">→</span>
+        <div class="lora-step">.18 训练节点B</div>
+        <span class="c-gray" style="font-size:20px;">→</span>
+        <div class="lora-step">.11 FedAvg聚合</div>
+        <span class="c-gray" style="font-size:20px;">→</span>
+        <div class="lora-step">全局权重广播</div>
+        <span class="c-gray" style="font-size:20px;">→</span>
+        <div class="lora-step">各节点订阅更新</div>
+      </div>
+      <div style="margin-top:12px;font-size:11px;color:#4a7090;">ZMQ端口：训练节点 → :5560 PULL(.11) → FedAvg → :5561 PUB(.18) → 各节点SUB</div>
+    </div>
+  </div>
+
+  <!-- PLUGINS -->
+  <div id="panel-plugins" class="panel">
+    <div class="label-sec">▸ 抽屉插件架构（保证金账户升级后）</div>
+    <div class="grid2">
+      <div>
+        <div style="background:#0d1e35;border:1px solid #00aaff30;border-radius:10px;padding:20px;">
+          <div style="font-size:12px;color:#00aaff;margin-bottom:14px;letter-spacing:1px;">核心引擎（Core Engine）</div>
+          <div class="core-item">联邦学习信号融合层</div>
+          <div class="core-item">StrategyPlugin 标准接口</div>
+          <div class="core-item">统一 risk_gate 风控</div>
+          <div class="core-item">BacktestEngine 回测系统</div>
+          <div class="core-item">FedAvg 进化引擎</div>
+        </div>
+        <div class="sep"></div>
+        <div class="card">
+          <div class="label-sec" style="margin-bottom:12px;">▸ 接口规范（Python）</div>
+          <div class="code-box">
+            <span style="color:#ff8800;">class</span> <span style="color:#00aaff;">StrategyPlugin</span>(<span style="color:#ff8800;">ABC</span>):<br>
+            &nbsp;&nbsp;<span style="color:#4a7090;">plugin_id: str</span><br>
+            &nbsp;&nbsp;<span style="color:#4a7090;">asset_class: str</span><br>
+            &nbsp;&nbsp;<span style="color:#4a7090;">account: str</span><br>
+            &nbsp;&nbsp;<span style="color:#4a7090;">max_position: float</span><br>
+            <br>
+            &nbsp;&nbsp;<span style="color:#ff8800;">@abstractmethod</span><br>
+            &nbsp;&nbsp;<span style="color:#ff8800;">def</span> <span style="color:#00ff88;">generate_signal</span>(self, data)<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;→ Signal | None: ...<br>
+            <br>
+            &nbsp;&nbsp;<span style="color:#ff8800;">@abstractmethod</span><br>
+            &nbsp;&nbsp;<span style="color:#ff8800;">def</span> <span style="color:#00ff88;">compute_exit</span>(self, pos, data)<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;→ ExitSignal | None: ...<br>
+            <br>
+            &nbsp;&nbsp;<span style="color:#ff8800;">@abstractmethod</span><br>
+            &nbsp;&nbsp;<span style="color:#ff8800;">def</span> <span style="color:#00ff88;">backtest</span>(self, hist_data)<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;→ BacktestResult: ...
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="label-sec">插件列表（可热插拔）</div>
+        <div class="plugin-row" style="border-color:#00ff8830;">
+          <div class="plugin-dot" style="background:#00ff88;"></div>
+          <div style="flex:1;"><div class="fs13 fw7 c-white">动量寄生 v1</div><div class="fs10 c-gray">IB现金 / IB保证金</div></div>
+          <div style="background:#00ff8820;color:#00ff88;border-radius:4px;padding:3px 10px;font-size:10px;">运行中</div>
+        </div>
+        <div class="plugin-row" style="border-color:#00ff8830;">
+          <div class="plugin-dot" style="background:#00ff88;"></div>
+          <div style="flex:1;"><div class="fs13 fw7 c-white">加元动量 v1</div><div class="fs10 c-gray">BMO RESP</div></div>
+          <div style="background:#00ff8820;color:#00ff88;border-radius:4px;padding:3px 10px;font-size:10px;">运行中</div>
+        </div>
+        <div class="plugin-row">
+          <div class="plugin-dot" style="background:#00aaff;"></div>
+          <div style="flex:1;"><div class="fs13 fw7 c-white">均值回归 v1</div><div class="fs10 c-gray">IB保证金</div></div>
+          <div style="background:#00aaff20;color:#00aaff;border-radius:4px;padding:3px 10px;font-size:10px;">规划中</div>
+        </div>
+        <div class="plugin-row">
+          <div class="plugin-dot" style="background:#00aaff;"></div>
+          <div style="flex:1;"><div class="fs13 fw7 c-white">财报套利 v1</div><div class="fs10 c-gray">IB保证金</div></div>
+          <div style="background:#00aaff20;color:#00aaff;border-radius:4px;padding:3px 10px;font-size:10px;">规划中</div>
+        </div>
+        <div class="plugin-row">
+          <div class="plugin-dot" style="background:#00aaff;"></div>
+          <div style="flex:1;"><div class="fs13 fw7 c-white">ETF轮动 v1</div><div class="fs10 c-gray">IB保证金</div></div>
+          <div style="background:#00aaff20;color:#00aaff;border-radius:4px;padding:3px 10px;font-size:10px;">规划中</div>
+        </div>
+        <div class="plugin-row">
+          <div class="plugin-dot" style="background:#1a3050;"></div>
+          <div style="flex:1;"><div class="fs13 fw7 c-white">期权卖方 v1</div><div class="fs10 c-gray">IB保证金（稳定后）</div></div>
+          <div style="background:#ffffff10;color:#4a7090;border-radius:4px;padding:3px 10px;font-size:10px;">未来</div>
+        </div>
+        <div class="plugin-row">
+          <div class="plugin-dot" style="background:#1a3050;"></div>
+          <div style="flex:1;"><div class="fs13 fw7 c-white">做空动量 v1</div><div class="fs10 c-gray">IB保证金（双向）</div></div>
+          <div style="background:#ffffff10;color:#4a7090;border-radius:4px;padding:3px 10px;font-size:10px;">未来</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROADMAP -->
+  <div id="panel-roadmap" class="panel">
+    <div class="label-sec">▸ 开发路线图</div>
+
+    <div class="phase-row">
+      <div style="display:flex;flex-direction:column;align-items:center;">
+        <div class="phase-num" style="background:#00ff8820;border:2px solid #00ff88;color:#00ff88;">1</div>
+        <div class="phase-line"></div>
+      </div>
+      <div class="phase-card" style="border-color:#00ff8830;">
+        <div style="display:flex;align-items:center;"><div class="fs13 fw7 c-white">Phase 1：手动信号阶段</div><span class="phase-badge" style="background:#00ff8820;color:#00ff88;">进行中</span></div>
+        <div class="phase-items">
+          <div class="phase-item">○ 邮件信号格式化</div>
+          <div class="phase-item">○ 加元股票池接入（TSX）</div>
+          <div class="phase-item">○ BMO信号过滤器</div>
+          <div class="phase-item">○ T+1资金追踪（GFV）</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="phase-row">
+      <div style="display:flex;flex-direction:column;align-items:center;">
+        <div class="phase-num" style="background:#ff880020;border:2px solid #ff8800;color:#ff8800;">2</div>
+        <div class="phase-line"></div>
+      </div>
+      <div class="phase-card" style="border-color:#ff880030;">
+        <div style="display:flex;align-items:center;"><div class="fs13 fw7 c-white">Phase 2：保证金账户升级</div><span class="phase-badge" style="background:#ff880020;color:#ff8800;">即将</span></div>
+        <div class="phase-items">
+          <div class="phase-item">· $50,000 USD注入</div>
+          <div class="phase-item">· 插件注册系统</div>
+          <div class="phase-item">· 双向交易支持</div>
+          <div class="phase-item">· ATR动态仓位</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="phase-row">
+      <div style="display:flex;flex-direction:column;align-items:center;">
+        <div class="phase-num" style="background:#1a3050;border:2px solid #1a3050;color:#4a7090;">3</div>
+        <div class="phase-line"></div>
+      </div>
+      <div class="phase-card">
+        <div style="display:flex;align-items:center;"><div class="fs13 fw7 c-white">Phase 3：回测系统</div><span class="phase-badge" style="background:#ffffff10;color:#4a7090;">规划中</span></div>
+        <div class="phase-items">
+          <div class="phase-item">· 事件驱动回测引擎</div>
+          <div class="phase-item">· 历史数据接入（1年/1分钟）</div>
+          <div class="phase-item">· BMO/IB手续费模型</div>
+          <div class="phase-item">· HTML回测报告</div>
+          <div class="phase-item">· 夏普/最大回撤/盈利因子</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="phase-row">
+      <div style="display:flex;flex-direction:column;align-items:center;">
+        <div class="phase-num" style="background:#1a3050;border:2px solid #1a3050;color:#4a7090;">4</div>
+        <div class="phase-line"></div>
+      </div>
+      <div class="phase-card">
+        <div style="display:flex;align-items:center;"><div class="fs13 fw7 c-white">Phase 4：联邦进化</div><span class="phase-badge" style="background:#ffffff10;color:#4a7090;">规划中</span></div>
+        <div class="phase-items">
+          <div class="phase-item">· LoRA层定义（信号权重）</div>
+          <div class="phase-item">· FedAvg聚合逻辑（.11）</div>
+          <div class="phase-item">· 每日自动进化（cron）</div>
+          <div class="phase-item">· Grafana进化监控</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="phase-row">
+      <div style="display:flex;flex-direction:column;align-items:center;">
+        <div class="phase-num" style="background:#1a3050;border:2px solid #1a3050;color:#4a7090;">5</div>
+      </div>
+      <div class="phase-card">
+        <div style="display:flex;align-items:center;"><div class="fs13 fw7 c-white">Phase 5：多策略扩展</div><span class="phase-badge" style="background:#ffffff10;color:#4a7090;">未来</span></div>
+        <div class="phase-items">
+          <div class="phase-item">· 均值回归插件</div>
+          <div class="phase-item">· 财报套利插件</div>
+          <div class="phase-item">· 期权卖方插件</div>
+          <div class="phase-item">· 多品种同时运行</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+function showTab(name) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+</body>
+</html>
