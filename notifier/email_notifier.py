@@ -40,7 +40,7 @@ def get_pg_conn():
     )
 
 
-def ensure_notified_column(conn):
+def # ensure_notified_column(conn)  # column already exists:
     with conn.cursor() as cur:
         cur.execute("""
             ALTER TABLE signals_raw
@@ -196,7 +196,7 @@ def main():
     while True:
         try:
             conn = get_pg_conn()
-            ensure_notified_column(conn)
+            # ensure_notified_column(conn)  # column already exists
             signals = fetch_pending_signals(conn)
             if signals:
                 log.info("发现 %d 条待发信号", len(signals))
