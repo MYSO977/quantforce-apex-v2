@@ -303,7 +303,14 @@ def main():
     log.info(f"=== cad_scanner 启动 [{NODE_NAME}] ===")
 
     # 启动时加载完整股票池
-    all_tickers = get_tsx_tickers()
+    # 优先用动态池文件，否则用内置列表
+    try:
+        with open("/tmp/qf_pool_cad.txt") as f:
+            all_tickers = [l.strip() for l in f if l.strip()]
+        log.info(f"动态CAD池加载: {len(all_tickers)} 只")
+    except:
+        all_tickers = get_tsx_tickers()
+        log.info("使用内置TSX列表")
 
     # 换手率筛选（每日盘前更新一次）
     active_tickers = filter_by_turnover(all_tickers, top_n=100)
