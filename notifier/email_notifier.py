@@ -50,6 +50,7 @@ def fetch_pending_signals(conn):
             WHERE notified = FALSE
               AND confidence >= 7.0
               AND status = 'pending'
+              AND direction = 'buy'
             ORDER BY id ASC
             LIMIT 10
         """)
