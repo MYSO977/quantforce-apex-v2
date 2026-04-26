@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QuantForce Apex v2</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#090e1a;color:#c8d8f0;font-family:'Courier New',monospace;padding:16px}
+.header{display:flex;align-items:center;gap:12px;margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid #1a3050}
+.title{font-size:18px;font-weight:700;color:#fff;letter-spacing:2px}
+.subtitle{font-size:10px;color:#4a7090;letter-spacing:2px}
+.ts{margin-left:auto;font-size:10px;color:#4a7090}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:12px}
+.grid5{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:12px}
+.card{background:#0d1e35;border:1px solid #1a3050;border-radius:8px;padding:14px}
+.card-label{font-size:10px;color:#4a7090;letter-spacing:1px;margin-bottom:6px}
+.card-val{font-size:20px;font-weight:700}
+.node-card{background:#0d1e35;border-radius:8px;padding:12px;text-align:center;border:1px solid #1a3050}
+.node-dot{width:8px;height:8px;border-radius:50%;margin:0 auto 6px;display:block}
+.alive{background:#00ff88}.dead{background:#ff4444}
+.node-name{font-size:11px;color:#fff;font-weight:600}
+.node-role{font-size:9px;color:#4a7090;margin-top:2px}
+.signal-row{display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #0d1e35;font-size:11px}
+.signal-row:last-child{border-bottom:none}
+.sym{font-weight:700;color:#fff;width:60px}
+.score-badge{background:#00ff8820;color:#00ff88;border-radius:3px;padding:1px 6px;font-size:10px}
+.market-open{color:#00ff88}.market-closed{color:#ff4444}.market-pre{color:#ff8800}
+.c-green{color:#00ff88}.c-blue{color:#00aaff}.c-orange{color:#ff8800}.c-gray{color:#4a7090}
+.section-title{font-size:11px;color:#4a7090;letter-spacing:2px;margin-bottom:10px}
+.pos-row{display:flex;justify-content:space-between;font-size:11px;padding:6px 0;border-bottom:1px solid #0d1e35}
+</style>
+</head>
+<body>
+<div class="header">
+  <span style="font-size:24px">⚡</span>
+  <div>
+    <div class="title">QUANTFORCE APEX v2</div>
+    <div class="subtitle">量力实验室 · 分布式量化系统</div>
+  </div>
+  <div class="ts" id="ts">--</div>
+</div>
+<div class="grid3">
+  <div class="card"><div class="card-label">市场状态</div><div class="card-val" id="market-status">--</div></div>
+  <div class="card"><div class="card-label">IB 现金持仓</div><div class="card-val c-blue" id="ib-pos">-- / 3</div><div style="font-size:10px;color:#4a7090;margin-top:4px">$1,200 USD</div></div>
+  <div class="card"><div class="card-label">BMO RESP</div><div class="card-val c-orange">$18,000</div><div style="font-size:10px;color:#4a7090;margin-top:4px">CAD</div></div>
+</div>
+<div class="grid3">
+  <div class="card"><div class="card-label">今日信号</div><div class="card-val c-green" id="today-total">--</div></div>
+  <div class="card"><div class="card-label">技术 / 新闻</div><div class="card-val" id="signal-split" style="font-size:16px">-- / --</div></div>
+  <div class="card"><div class="card-label">待发送</div><div class="card-val c-orange" id="pending">--</div></div>
+</div>
+<div class="section-title">▸ 节点状态</div>
+<div class="grid5" id="nodes"></div>
+<div class="section-title">▸ 最新信号</div>
+<div class="card" style="margin-bottom:12px"><div id="signals-list"><div style="color:#4a7090;font-size:11px">加载中...</div></div></div>
+<div class="section-title">▸ IB现金持仓</div>
+<div class="card"><div id="positions-list"><div style="color:#4a7090;font-size:11px">无持仓</div></div></div>
+<script>
+async function refresh(){
+  try{
+    const r=await fetch('/api/dashboard');
+    const d=await r.json();
+    document.getElementById('ts').textContent=new Date(d.ts).toLocaleTimeString('zh-CN');
+    const ms=d.market_status;
+    const msEl=document.getElementById('market-status');
+    msEl.textContent={open:'● 开盘',closed:'● 收盘',pre:'● 盘前',after:'● 盘后'}[ms]||ms;
+    msEl.className='card-val '+{open:'market-open',closed:'market-closed',pre:'market-pre',after:'c-gray'}[ms];
+    const ib=d.accounts?.ib_cash;
+    if(ib)document.getElementById('ib-pos').textContent=`${ib.positions} / ${ib.max_positions}`;
+    const s=d.signals?.stats||{};
+    document.getElementById('today-total').textContent=s.today_total||0;
+    document.getElementById('signal-split').textContent=`${s.today_tech||0} / ${s.today_news||0}`;
+    document.getElementById('pending').textContent=s.pending||0;
+    const nodesEl=document.getElementById('nodes');
+    nodesEl.innerHTML=(d.nodes||[]).map(n=>`
+      <div class="node-card">
+        <span class="node-dot ${n.alive?'alive':'dead'}"></span>
+        <div class="node-name">${n.id}</div>
+        <div class="node-role">${n.name}</div>
+        <div class="node-role">${n.role}</div>
+      </div>`).join('');
+    const sigsEl=document.getElementById('signals-list');
+    const sigs=d.signals?.recent||[];
+    if(!sigs.length){sigsEl.innerHTML='<div style="color:#4a7090;font-size:11px">暂无信号</div>';}
+    else{sigsEl.innerHTML=sigs.map(s=>{
+      const c=[s.score,s.llm_score,s.gpu_score].filter(x=>x!=null);
+      const avg=c.length?(c.reduce((a,b)=>a+b,0)/c.length).toFixed(1):s.score;
+      const t=new Date(s.created_at).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
+      return `<div class="signal-row"><span class="sym">${s.symbol}</span><span class="score-badge">${avg}分</span><span style="color:#4a7090">${s.signal_type}</span><span style="color:#4a7090;margin-left:auto">${t}</span></div>`;
+    }).join('');}
+    const posEl=document.getElementById('positions-list');
+    const pos=d.signals?.positions||[];
+    if(!pos.length){posEl.innerHTML='<div style="color:#4a7090;font-size:11px">无持仓</div>';}
+    else{posEl.innerHTML=pos.map(p=>`<div class="pos-row"><span style="color:#fff;font-weight:600">${p.symbol}</span><span class="c-blue">$${p.amount_usd}</span><span style="color:#4a7090">结算:${p.settle_date}</span></div>`).join('');}
+  }catch(e){console.error(e);}
+}
+refresh();
+setInterval(refresh,15000);
+</script>
+</body>
+</html>
