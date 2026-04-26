@@ -35,7 +35,7 @@ log = logging.getLogger(__name__)
 
 def get_pg_conn():
     return psycopg2.connect(
-        host=PG_HOST, port=PG_PORT, dbname=PG_DB,
+        host=PG_HOST, port=PG_PORT, dbname=PG_DB, connect_timeout=5,
         user=PG_USER, password=PG_PASS
     )
 
