@@ -60,17 +60,26 @@ def write_signal(data: dict):
     features["position"] = position
     features["cost"]     = round(qty * price, 2)
 
+    account  = data.get("account", "ib_cash")
+    currency = "CAD" if account == "bmo_resp" else "USD"
+    position = 3000.0 if account == "bmo_resp" else 400.0
+    qty      = max(1, int(position / price)) if price > 0 else 1
+    cost     = round(qty * price, 2)
+
     features = {
-        "price":  price,
-        "rvol":   rvol,
-        "vwap":   vwap,
-        "macd":   macd,
-        "open":   float(data.get("open", 0)),
-        "score":  score,
-        "ticker": ticker,
-        "source": source,
-        "currency": "USD",
-        "account":  "ib_cash",
+        "price":    price,
+        "rvol":     rvol,
+        "vwap":     vwap,
+        "macd":     macd,
+        "open":     float(data.get("open", 0)),
+        "score":    score,
+        "ticker":   ticker,
+        "source":   source,
+        "currency": currency,
+        "account":  account,
+        "qty":      qty,
+        "position": position,
+        "cost":     cost,
     }
     if data.get("ema9"):
         features["ema9"] = float(data["ema9"])
