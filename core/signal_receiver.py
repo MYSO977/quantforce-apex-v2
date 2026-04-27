@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 """
 QuantForce Apex v2 — signal_receiver.py
-节点: .18
-功能: 接收 tech_scanner 的 HTTP POST 信号，写入 signals_raw
-端口: 5800
+节点: .18 | 端口: 5800
+接收 tech_scanner HTTP POST，自动计算股数，写入 signals_raw
 """
 
 import json
@@ -39,24 +38,24 @@ def get_pg_conn():
 
 
 def write_signal(data: dict):
-    ticker  = data.get("ticker") or data.get("symbol", "UNKNOWN")
-    price   = float(data.get("price", 0))
-    rvol    = float(data.get("rvol", 0))
-    vwap    = float(data.get("vwap", 0))
-    macd    = float(data.get("macd", 0))
-    score   = float(data.get("score", 7.5))
-    source  = data.get("source", "tech_scanner")
+    ticker   = data.get("ticker") or data.get("symbol", "UNKNOWN")
+    price    = float(data.get("price", 0))
+    rvol     = float(data.get("rvol", 0))
+    vwap     = float(data.get("vwap", 0))
+    macd     = float(data.get("macd", 0))
+    score    = float(data.get("score", 7.5))
+    source   = data.get("source", "tech_scanner")
+    account  = data.get("account", "ib_cash")
+    currency = "CAD" if account == "bmo_resp" else "USD"
 
-    # 基본질量过滤
+    # 基本质量过滤
     if price <= 0 or rvol < 1.5:
         log.warning(f"信号质量不足，丢弃: {ticker} price={price} rvol={rvol}")
         return False
 
-    # 账户和仓位
-    account  = data.get("account", "ib_cash")
-    currency = "CAD" if account == "bmo_resp" else "USD"
+    # 自动计算股数
     position = 3000.0 if account == "bmo_resp" else 400.0
-    qty      = max(1, int(position / price)) if price > 0 else 1
+    qty      = max(1, int(position / price))
     cost     = round(qty * price, 2)
 
     features = {
@@ -77,4 +76,67 @@ def write_signal(data: dict):
     if data.get("ema9"):
         features["ema9"] = float(data["ema9"])
 
+    try:
+        conn = get_pg_conn()
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO signals_raw
+                  (signal_id, symbol, signal_type, direction,
+                   confidence, score, source, pipeline, features)
+                VALUES (%s, %s, 'tech', 'buy', %s, %s, %s, 'apex', %s)
+                ON CONFLICT (signal_id) DO NOTHING
+            """, (
+                str(uuid.uuid4()),
+                ticker,
+                min(score, 10.0),
+                score,
+                source,
+                psycopg2.extras.Json(features)
+            ))
+        conn.commit()
+        conn.close()
+        log.info(f"✅ 写入PG: {ticker} qty={qty} price={price} cost={cost} rvol={rvol}")
+        return True
+    except Exception as e:
+        log.error(f"写入失败: {e}")
+        return False
 
+
+class SignalHandler(BaseHTTPRequestHandler):
+    def do_POST(self):
+        if self.path != "/signal":
+            self.send_response(404)
+            self.end_headers()
+            return
+        try:
+            length = int(self.headers.get("Content-Length", 0))
+            body   = self.rfile.read(length)
+            data   = json.loads(body)
+            ok     = write_signal(data)
+            self.send_response(200 if ok else 400)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps({"ok": ok}).encode())
+        except Exception as e:
+            log.error(f"请求处理失败: {e}")
+            self.send_response(500)
+            self.end_headers()
+
+    def do_GET(self):
+        if self.path == "/health":
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps({"status": "ok"}).encode())
+        else:
+            self.send_response(404)
+            self.end_headers()
+
+    def log_message(self, format, *args):
+        pass
+
+
+if __name__ == "__main__":
+    server = HTTPServer(("0.0.0.0", 5800), SignalHandler)
+    log.info("signal_receiver 启动，监听 0.0.0.0:5800")
+    server.serve_forever()
