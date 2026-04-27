@@ -42,6 +42,36 @@ def get_pg_conn():
 
 
 def fetch_pending_signals(conn):
+    """使用 signal_filter 高质量过滤器"""
+    import sys
+    sys.path.insert(0, "/home/heng/quantforce-apex-v2")
+    try:
+        from core.signal_filter import run_filter
+        results = run_filter(limit=20)
+        # 补充 gpu_indicators 字段
+        if results:
+            ids = tuple(r["id"] for r in results)
+            with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+                cur.execute("""
+                    SELECT id, signal_id, symbol, direction, confidence,
+                           score, source, pipeline, features, expire_at,
+                           llm_score, llm_reason, gpu_score, gpu_indicators
+                    FROM signals_raw WHERE id = ANY(%s)
+                """, (list(ids),))
+                full = {r["id"]: dict(r) for r in cur.fetchall()}
+            # 合并优先级
+            final = []
+            for r in results:
+                if r["id"] in full:
+                    d = full[r["id"]]
+                    d["_priority"] = r["_priority"]
+                    d["_reason"]   = r["_reason"]
+                    final.append(d)
+            return final
+    except Exception as e:
+        log.error(f"signal_filter 失败，使用基础查询: {e}")
+
+    # 降级：基础查询
     with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
         cur.execute("""
             SELECT id, signal_id, symbol, direction, confidence,
@@ -52,8 +82,7 @@ def fetch_pending_signals(conn):
               AND confidence >= 7.0
               AND status = 'pending'
               AND direction = 'buy'
-            ORDER BY id ASC
-            LIMIT 5
+            ORDER BY id ASC LIMIT 5
         """)
         return [dict(r) for r in cur.fetchall()]
 
