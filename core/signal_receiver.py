@@ -52,6 +52,14 @@ def write_signal(data: dict):
         log.warning(f"信号质量不足，丢弃: {ticker} price={price} rvol={rvol}")
         return False
 
+    # 自动计算股数
+    account  = features.get("account", "ib_cash")
+    position = 3000.0 if account == "bmo_resp" else 400.0
+    qty      = max(1, int(position / price)) if price > 0 else 1
+    features["qty"]      = qty
+    features["position"] = position
+    features["cost"]     = round(qty * price, 2)
+
     features = {
         "price":  price,
         "rvol":   rvol,

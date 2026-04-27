@@ -96,7 +96,14 @@ def format_email(sig):
         "ib_margin": "IB 保证金账户（USD）",
         "bmo_resp":  "BMO RESP（CAD）",
     }.get(account, account)
-    position = "$400 USD" if "ib" in account else "$3,000 CAD"
+    qty      = f.get("qty", 0)
+    cost     = f.get("cost", 0)
+    pos_usd  = f.get("position", 400 if "ib" in account else 3000)
+    if qty:
+        position = f"{qty}股 × {currency}{price:.2f} = {currency}{cost:.2f}"
+    else:
+        qty = max(1, int((400 if "ib" in account else 3000) / price)) if price > 0 else 1
+        position = f"{qty}股 × {currency}{price:.2f} = {currency}{round(qty*price,2):.2f}"
 
     # 止损止盈
     sl_pct = 3.0
