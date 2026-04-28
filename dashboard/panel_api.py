@@ -109,6 +109,88 @@ def get_signal_stats() -> dict:
         return {"stats": {}, "recent": [], "positions": []}
 
 
+def get_bmo_positions() -> list[dict]:
+    try:
+        conn = get_pg_conn()
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute("""
+                SELECT id, symbol, qty, entry_price, entry_date,
+                       stop_price, target_price, commission,
+                       CURRENT_DATE - entry_date AS holding_days,
+                       status, notes
+                FROM bmo_positions
+                WHERE status = 'open'
+                ORDER BY entry_date DESC
+            """)
+            rows = [dict(r) for r in cur.fetchall()]
+        conn.close()
+        for r in rows:
+            r["entry_date"]    = str(r["entry_date"])
+            r["holding_days"]  = int(r["holding_days"])
+            r["cost_cad"]      = round(float(r["entry_price"]) * r["qty"] + float(r["commission"]), 2)
+            r["entry_price"]   = float(r["entry_price"])
+            r["stop_price"]    = float(r["stop_price"] or 0)
+            r["target_price"]  = float(r["target_price"] or 0)
+        return rows
+    except Exception as e:
+        log.error(f"BMO持仓查询失败: {e}")
+        return []
+
+
+def add_bmo_position(symbol: str, qty: int, entry_price: float,
+                     stop_price: float = None, target_price: float = None,
+                     notes: str = "") -> bool:
+    try:
+        if not stop_price:
+            stop_price = round(entry_price * 0.97, 2)
+        if not target_price:
+            target_price = round(entry_price * 1.15, 2)
+        conn = get_pg_conn()
+        with conn.cursor() as cur:
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS bmo_positions (
+                    id SERIAL PRIMARY KEY, symbol TEXT, qty INTEGER,
+                    entry_price NUMERIC(10,4), entry_date DATE DEFAULT CURRENT_DATE,
+                    stop_price NUMERIC(10,4), target_price NUMERIC(10,4),
+                    commission NUMERIC(6,2) DEFAULT 10.0,
+                    status TEXT DEFAULT 'open', notes TEXT,
+                    created_at TIMESTAMPTZ DEFAULT NOW()
+                )
+            """)
+            cur.execute("""
+                INSERT INTO bmo_positions (symbol, qty, entry_price, stop_price, target_price, notes)
+                VALUES (%s, %s, %s, %s, %s, %s)
+            """, (symbol.upper(), qty, entry_price, stop_price, target_price, notes))
+        conn.commit()
+        conn.close()
+        log.info(f"BMO录入: {symbol} {qty}股 @{entry_price}")
+        return True
+    except Exception as e:
+        log.error(f"BMO录入失败: {e}")
+        return False
+
+
+def close_bmo_position(pos_id: int, exit_price: float) -> dict:
+    try:
+        conn = get_pg_conn()
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute("SELECT * FROM bmo_positions WHERE id=%s", (pos_id,))
+            pos = dict(cur.fetchone())
+            gross = (exit_price - float(pos["entry_price"])) * pos["qty"]
+            net   = gross - float(pos["commission"]) * 2
+            cur.execute("""
+                UPDATE bmo_positions SET status='closed',
+                notes=CONCAT(notes, ' | 出价:', %s, ' 净盈亏:$', %s)
+                WHERE id=%s
+            """, (exit_price, round(net,2), pos_id))
+        conn.commit()
+        conn.close()
+        return {"gross": round(gross,2), "net": round(net,2)}
+    except Exception as e:
+        log.error(f"BMO平仓失败: {e}")
+        return {}
+
+
 def get_dashboard_data() -> dict:
     now = datetime.now(ET)
 
@@ -139,6 +221,7 @@ def get_dashboard_data() -> dict:
         "market_status": market_status,
         "nodes":         nodes,
         "signals":       signal_data,
+        "bmo_positions": get_bmo_positions(),
         "accounts": {
             "ib_cash": {
                 "balance": 1200,
