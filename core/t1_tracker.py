@@ -281,3 +281,114 @@ if __name__ == "__main__":
 
     ok, reason = tracker.can_buy("CLYM", 400.0)
     print(f"买入检查 CLYM $400: {'✅' if ok else '❌'} {reason}")
+
+
+# ── BMO RESP 持仓追踪 ─────────────────────────────────────────
+class BMOTracker:
+    """
+    BMO RESP 手动持仓追踪
+    买入后手动录入，系统自动计算盈亏、持仓天数、止损止盈
+    """
+    def __init__(self):
+        self._ensure_table()
+
+    def _get_conn(self):
+        return get_pg_conn()
+
+    def _ensure_table(self):
+        conn = self._get_conn()
+        with conn.cursor() as cur:
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS bmo_positions (
+                    id           SERIAL PRIMARY KEY,
+                    symbol       TEXT NOT NULL,
+                    qty          INTEGER NOT NULL,
+                    entry_price  NUMERIC(10,4) NOT NULL,
+                    entry_date   DATE NOT NULL DEFAULT CURRENT_DATE,
+                    stop_price   NUMERIC(10,4),
+                    target_price NUMERIC(10,4),
+                    commission   NUMERIC(6,2) DEFAULT 10.0,
+                    status       TEXT DEFAULT 'open',
+                    exit_price   NUMERIC(10,4),
+                    exit_date    DATE,
+                    notes        TEXT,
+                    created_at   TIMESTAMPTZ DEFAULT NOW()
+                )
+            """)
+        conn.commit()
+        conn.close()
+
+    def add_position(self, symbol: str, qty: int, entry_price: float,
+                     stop_price: float = None, target_price: float = None,
+                     notes: str = "") -> int:
+        """录入 BMO 买入"""
+        # 默认止损-3%，止盈+15%（1:5盈亏比）
+        if not stop_price:
+            stop_price = round(entry_price * 0.97, 2)
+        if not target_price:
+            target_price = round(entry_price * 1.15, 2)
+
+        conn = self._get_conn()
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO bmo_positions
+                  (symbol, qty, entry_price, stop_price, target_price, notes)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                RETURNING id
+            """, (symbol.upper(), qty, entry_price, stop_price, target_price, notes))
+            pos_id = cur.fetchone()[0]
+        conn.commit()
+        conn.close()
+        return pos_id
+
+    def get_open_positions(self) -> list[dict]:
+        conn = self._get_conn()
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute("""
+                SELECT *, 
+                       CURRENT_DATE - entry_date AS holding_days
+                FROM bmo_positions
+                WHERE status = 'open'
+                ORDER BY entry_date DESC
+            """)
+            rows = [dict(r) for r in cur.fetchall()]
+        conn.close()
+        return rows
+
+    def close_position(self, pos_id: int, exit_price: float) -> dict:
+        """平仓，计算盈亏"""
+        conn = self._get_conn()
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute("SELECT * FROM bmo_positions WHERE id=%s", (pos_id,))
+            pos = dict(cur.fetchone())
+            gross_pnl = (exit_price - float(pos["entry_price"])) * pos["qty"]
+            net_pnl   = gross_pnl - float(pos["commission"]) * 2  # 进+出
+            cur.execute("""
+                UPDATE bmo_positions
+                SET status='closed', exit_price=%s, exit_date=CURRENT_DATE
+                WHERE id=%s
+            """, (exit_price, pos_id))
+        conn.commit()
+        conn.close()
+        return {"gross_pnl": round(gross_pnl, 2), "net_pnl": round(net_pnl, 2)}
+
+    def status_report(self) -> str:
+        positions = self.get_open_positions()
+        lines = [
+            "══════════════════════════════════",
+            "  BMO RESP 持仓状态",
+            "══════════════════════════════════",
+        ]
+        if not positions:
+            lines.append("  无持仓")
+        for p in positions:
+            cost = float(p["entry_price"]) * p["qty"] + float(p["commission"])
+            lines.append(
+                f"  {p['symbol']:8} {p['qty']}股 @ ${p['entry_price']} "
+                f"持仓{p['holding_days']}天 成本${cost:.0f}CAD"
+            )
+            lines.append(
+                f"           止损${p['stop_price']} 止盈${p['target_price']}"
+            )
+        lines.append("══════════════════════════════════")
+        return "\n".join(lines)
