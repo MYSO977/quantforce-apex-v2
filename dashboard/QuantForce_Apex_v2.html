@@ -628,7 +628,7 @@ async function refreshLive() {
     liveDiv.innerHTML = `
       <div style="font-size:12px;color:#4a7090;letter-spacing:2px;margin-bottom:14px">▸ 实时信号（最新5条）</div>
       ${sigs.length ? sigs.map(sg => {
-        const c=[sg.score,sg.llm_score,sg.gpu_score].filter(x=>x!=null&&!isNaN(x)&&x>0);
+        const c=[sg.score,sg.llm_score,sg.gpu_score].map(x=>parseFloat(x)).filter(x=>!isNaN(x)&&x>0);
         const avg=c.length?(c.reduce((a,b)=>a+b,0)/c.length).toFixed(1):(parseFloat(sg.score)||0).toFixed(1);
         const t=new Date(sg.created_at).toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit"});
         return `<div style="display:flex;gap:12px;align-items:center;padding:8px 0;border-bottom:1px solid #091420;font-size:11px">
