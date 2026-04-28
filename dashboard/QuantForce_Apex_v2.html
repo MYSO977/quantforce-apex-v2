@@ -181,7 +181,7 @@
         <div><span class="c-gray">盈亏比：</span><span class="c-orange">1 : 5.0</span><span class="c-gray">  |  置信度：</span><span class="c-blue">8.3/10</span></div>
         <br>
         <div class="c-green">✅ 三周期共振  ✅ RVOL 2.34  ✅ Groq 8.1</div>
-        <div class="c-orange">⚠️ 现金账户：T+1结算，请勿当日卖出</div>
+        <div class="c-orange">⚠️ 现金账户：T+1结算，当日可卖出，资金隔日可用</div>
       </div>
     </div>
   </div>
@@ -566,5 +566,93 @@ function showTab(name) {
   event.target.classList.add('active');
 }
 </script>
+
+<script>
+const API = "http://192.168.0.18:5801/api/dashboard";
+
+async function refreshLive() {
+  try {
+    const r = await fetch(API);
+    const d = await r.json();
+
+    // 日期时间
+    document.querySelectorAll(".badge-date").forEach(el => {
+      el.textContent = new Date(d.ts).toLocaleString("zh-CN",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"});
+    });
+
+    // 市场状态
+    const msText = {open:"● 开盘",closed:"● 收盘",pre:"● 盘前",after:"● 盘后"}[d.market_status] || "● --";
+    const msColor = {open:"#00ff88",closed:"#ff4444",pre:"#ff8800",after:"#4a7090"}[d.market_status] || "#4a7090";
+    document.querySelectorAll(".badge-live").forEach(el => {
+      el.textContent = msText;
+      el.style.color = msColor;
+      el.style.borderColor = msColor + "40";
+      el.style.background = msColor + "20";
+    });
+
+    // 节点在线数
+    const alive = (d.nodes||[]).filter(n=>n.alive).length;
+    const total = (d.nodes||[]).length;
+    const el3 = document.getElementById("rt-nodes");
+    if(el3) { el3.textContent = alive + " / " + total; }
+
+    // 今日信号
+    const s = d.signals?.stats || {};
+    const el1 = document.getElementById("rt-signals");
+    if(el1) { el1.textContent = s.today_total || 0; }
+    const el2 = document.getElementById("rt-split");
+    if(el2) { el2.textContent = "技术:" + (s.today_tech||0) + " 新闻:" + (s.today_news||0); }
+    const el4 = document.getElementById("rt-pending");
+    if(el4) { el4.textContent = (s.pending||0) + " 条待发"; }
+
+    // 节点卡片颜色
+    (d.nodes||[]).forEach(n => {
+      document.querySelectorAll(".node-card").forEach(card => {
+        if(card.textContent.includes(n.id)) {
+          card.style.borderColor = n.alive ? "#00ff8840" : "#ff444440";
+        }
+      });
+    });
+
+    // 实时信号列表
+    let liveDiv = document.getElementById("live-signals");
+    if(!liveDiv) {
+      liveDiv = document.createElement("div");
+      liveDiv.id = "live-signals";
+      liveDiv.style.cssText = "background:#0d1e35;border:1px solid #1a3050;border-radius:10px;padding:20px;margin-top:20px";
+      const overview = document.getElementById("panel-overview");
+      if(overview) overview.appendChild(liveDiv);
+    }
+    const sigs = d.signals?.recent || [];
+    const pos  = d.signals?.positions || [];
+    liveDiv.innerHTML = `
+      <div style="font-size:12px;color:#4a7090;letter-spacing:2px;margin-bottom:14px">▸ 实时信号（最新5条）</div>
+      ${sigs.length ? sigs.map(sg => {
+        const c=[sg.score,sg.llm_score,sg.gpu_score].filter(x=>x!=null);
+        const avg=c.length?(c.reduce((a,b)=>a+b,0)/c.length).toFixed(1):(sg.score||0).toFixed(1);
+        const t=new Date(sg.created_at).toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit"});
+        return `<div style="display:flex;gap:12px;align-items:center;padding:8px 0;border-bottom:1px solid #091420;font-size:11px">
+          <span style="font-weight:700;color:#fff;width:60px">${sg.symbol}</span>
+          <span style="background:#00ff8820;color:#00ff88;border-radius:3px;padding:1px 8px">${avg}分</span>
+          <span style="color:#4a7090">${sg.signal_type}</span>
+          <span style="color:#4a7090;margin-left:auto">${t}</span>
+        </div>`;
+      }).join("") : '<div style="color:#4a7090;font-size:11px">暂无信号</div>'}
+      <div style="font-size:12px;color:#4a7090;letter-spacing:2px;margin:14px 0 10px">▸ IB现金持仓（T+1）</div>
+      ${pos.length ? pos.map(p=>`<div style="display:flex;justify-content:space-between;font-size:11px;padding:6px 0;border-bottom:1px solid #091420">
+        <span style="color:#fff;font-weight:600">${p.symbol}</span>
+        <span style="color:#00aaff">$${p.amount_usd}</span>
+        <span style="color:#4a7090">结算:${p.settle_date}</span>
+      </div>`).join("") : '<div style="color:#4a7090;font-size:11px">无持仓</div>'}
+    `;
+  } catch(e) {
+    console.warn("API离线，使用静态数据", e);
+  }
+}
+
+refreshLive();
+setInterval(refreshLive, 15000);
+</script>
+
 </body>
 </html>
