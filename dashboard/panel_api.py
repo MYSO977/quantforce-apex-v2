@@ -175,7 +175,7 @@ class PanelHandler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def _html(self):
-        html = open("/home/heng/quantforce-apex-v2/dashboard/index.html", "rb").read()
+        html = open("/home/heng/quantforce-apex-v2/dashboard/QuantForce_Apex_v2.html", "rb").read()
         self.send_response(200)
         self.send_header("Content-Type", "text/html; charset=utf-8")
         self.end_headers()
