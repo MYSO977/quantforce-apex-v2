@@ -160,8 +160,10 @@ class PanelHandler(BaseHTTPRequestHandler):
             self._json(200, data)
         elif self.path == "/health":
             self._json(200, {"status": "ok"})
+        elif self.path == "/light":
+            self._serve("QuantForce_Apex_v2_light.html")
         elif self.path == "/" or self.path == "/dashboard":
-            self._html()
+            self._serve("QuantForce_Apex_v2.html")
         else:
             self.send_response(404)
             self.end_headers()
@@ -174,12 +176,16 @@ class PanelHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
-    def _html(self):
-        html = open("/home/heng/quantforce-apex-v2/dashboard/QuantForce_Apex_v2.html", "rb").read()
+    def _serve(self, filename):
+        path = f"/home/heng/quantforce-apex-v2/dashboard/{filename}"
+        html = open(path, "rb").read()
         self.send_response(200)
         self.send_header("Content-Type", "text/html; charset=utf-8")
         self.end_headers()
         self.wfile.write(html)
+
+    def _html(self):
+        self._serve("QuantForce_Apex_v2.html")
 
     def log_message(self, format, *args):
         pass
