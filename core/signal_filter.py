@@ -29,7 +29,7 @@ log = logging.getLogger(__name__)
 # ─── 过滤参数 ─────────────────────────────────────────────────
 MIN_COMPOSITE_SCORE  = 8.0   # 综合评分门槛
 MIN_COMPOSITE_CONSOL = 7.5   # 横盘突破时降低门槛
-MIN_RVOL             = 2.0   # 最低RVOL
+MIN_RVOL             = 2.5   # 最低RVOL
 MIN_GPU_SCORE        = 8.0   # GPU技术评分
 MAX_DAILY_GAIN_PCT   = 15.0  # 最大当日涨幅（避免追高）
 DEDUP_HOURS          = 24    # 同标的去重时间窗口

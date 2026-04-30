@@ -10,6 +10,7 @@ import json
 import psycopg2
 import psycopg2.extras
 import subprocess
+import paramiko
 import time
 import logging
 from http.server import HTTPServer, BaseHTTPRequestHandler
@@ -71,18 +72,103 @@ def get_signal_stats() -> dict:
 
             # 最新5条信号
             cur.execute("""
-                SELECT symbol, direction, score, llm_score, gpu_score,
-                       signal_type, source, created_at
-                FROM signals_raw
-                WHERE direction = 'buy'
-                ORDER BY created_at DESC
-                LIMIT 5
+                SELECT s.symbol, s.direction, s.score, s.llm_score, s.gpu_score,
+                       s.signal_type, s.source, s.created_at, s.features, s.gpu_indicators,
+                       w.dollar_volume_rank, w.sector as w_sector, w.active as in_whitelist
+                FROM signals_raw s
+                LEFT JOIN universe_whitelist w ON s.symbol = w.symbol
+                WHERE s.direction = 'buy'
+                  AND s.signal_type = 'tech'
+                  AND s.features->>'price' IS NOT NULL
+                  AND s.created_at > NOW() - INTERVAL '24h'
+                ORDER BY (
+                    COALESCE(score,0) + COALESCE(llm_score,0) + COALESCE(gpu_score,0)
+                ) / NULLIF(
+                    (CASE WHEN score>0 THEN 1 ELSE 0 END +
+                     CASE WHEN llm_score>0 THEN 1 ELSE 0 END +
+                     CASE WHEN gpu_score>0 THEN 1 ELSE 0 END), 0
+                ) DESC NULLS LAST,
+                created_at DESC
+                LIMIT 50
             """)
             recent = []
             for r in cur.fetchall():
                 d = dict(r)
                 d["created_at"] = d["created_at"].isoformat()
-                recent.append(d)
+                f = d.get("features") or {}
+                d["rvol"]           = f.get("rvol")
+                d["price"]          = f.get("price")
+                d["macd"]           = f.get("macd") or f.get("macd_hist")
+                d["vwap"]           = f.get("vwap")
+                d["currency"]       = f.get("currency","USD")
+                price = f.get("price")
+                sl = f.get("stop_loss")
+                tp = f.get("take_profit")
+                if price and not sl:
+                    sl = round(price * 0.97, 2)
+                if price and not tp:
+                    tp = round(price * 1.12, 2)
+                sl_pct = f.get("stop_loss_pct") or (round((sl/price-1)*100,1) if price and sl else None)
+                tp_pct = f.get("take_profit_pct") or (round((tp/price-1)*100,1) if price and tp else None)
+                d["stop_loss"]      = sl
+                d["take_profit"]    = tp
+                d["stop_loss_pct"]  = sl_pct
+                d["take_profit_pct"]= tp_pct
+                currency = f.get("currency", "USD")
+                if currency == "USD":
+                    if price and price > 25:
+                        recent = recent  # 后面用 continue 跳过
+                        d["_skip"] = True
+                    elif price and price > 0:
+                        d["shares"] = int(400 / price)
+                        d["position_value"] = round(d["shares"] * price, 2)
+                    else:
+                        d["shares"] = f.get("shares") or f.get("qty")
+                elif currency == "CAD":
+                    if price and price > 50:
+                        d["_skip"] = True
+                    elif price and price > 0:
+                        d["shares"] = int(2500 / price)
+                        d["position_value"] = round(d["shares"] * price, 2)
+                    else:
+                        d["shares"] = f.get("shares") or f.get("qty")
+                else:
+                    d["shares"] = f.get("shares") or f.get("qty")
+                # 横盘突破检测
+                bb_upper = d.get("bb_upper") or (d.get("gpu_indicators") or {}).get("bb_upper")
+                bb_lower = d.get("bb_lower") or (d.get("gpu_indicators") or {}).get("bb_lower")
+                bb_mid   = d.get("bb_mid")   or (d.get("gpu_indicators") or {}).get("bb_mid")
+                ema9_slope = (d.get("gpu_indicators") or {}).get("ema9_slope")
+                if bb_upper and bb_lower and bb_mid and price:
+                    bb_width_pct = round((bb_upper - bb_lower) / bb_mid * 100, 2)
+                    is_squeeze = bb_width_pct < 5.0
+                    is_breakout = price >= bb_upper * 0.995
+                    slope_flat = ema9_slope is not None and abs(ema9_slope) < 0.3
+                    d["bb_width_pct"] = bb_width_pct
+                    d["consolidation"] = is_squeeze and is_breakout
+                    d["consolidation_detail"] = {
+                        "bb_width_pct": bb_width_pct,
+                        "is_squeeze": is_squeeze,
+                        "is_breakout": is_breakout,
+                        "slope_flat": slope_flat
+                    }
+                else:
+                    d["bb_width_pct"] = None
+                    d["consolidation"] = False
+                    d["consolidation_detail"] = None
+                d["dollar_volume_rank"] = d.get("dollar_volume_rank")
+                d["in_whitelist"]   = d.get("in_whitelist") or False
+                d["position_cad"]   = f.get("position_cad") or f.get("cost")
+                d["sector"]         = f.get("sector","")
+                g = d.get("gpu_indicators") or {}
+                d["rsi"]      = g.get("rsi_14")
+                d["bb_mid"]   = g.get("bb_mid")
+                d["ema9"]     = g.get("ema9")
+                d["ema20"]    = g.get("ema20")
+                d["bb_upper"] = g.get("bb_upper")
+                d["bb_lower"] = g.get("bb_lower")
+                if not d.get("_skip"):
+                    recent.append(d)
 
             # t1_positions 持仓
             cur.execute("""
@@ -191,6 +277,68 @@ def close_bmo_position(pos_id: int, exit_price: float) -> dict:
         return {}
 
 
+
+def get_node_stats() -> list[dict]:
+    """获取各节点实时CPU/内存使用率"""
+    import subprocess
+    import paramiko
+
+    nodes = [
+        {"id": ".18",  "ip": "192.168.0.18",  "name": "Acer XC-605",   "local": True},
+        {"id": ".11",  "ip": "192.168.0.11",  "name": "Dell OptiPlex", "local": False},
+        {"id": ".143", "ip": "192.168.0.143", "name": "Lenovo",         "local": False},
+        {"id": ".101", "ip": "192.168.0.101", "name": "Asus L406M",     "local": False},
+        {"id": ".102", "ip": "192.168.0.102", "name": "Asus L410M",     "local": False},
+    ]
+
+    CMD = "top -bn1 | grep 'Cpu' | awk '{print $2}' && free -m | awk 'NR==2{printf \"%.0f %.0f\\n\", $3/$2*100, $2}' && systemctl is-active tech-scanner qf-notifier scanner_v4 qf-cad-scanner tsx_scanner signal_fusion ib-executor quant-courier notify-worker quantforce-health 2>/dev/null | paste -d',' - - - - - - - - - - "
+    PROCS = {
+        ".18":  ["signal_fusion","quantforce-health","qf-panel"],
+        ".11":  ["ib-executor","qf-llm-scorer"],
+        ".143": ["tech-scanner","scanner_v4","qf-notifier","qf-cad-scanner"],
+        ".101": ["grafana-server","quantforce-health"],
+        ".102": ["quant-courier","notify-worker"],
+    }
+
+    results = []
+    for n in nodes:
+        try:
+            if n["local"]:
+                r = subprocess.run(CMD, shell=True, capture_output=True, text=True, timeout=3)
+                lines = r.stdout.strip().split('\n')
+            else:
+                ssh = paramiko.SSHClient()
+                ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                ssh.connect(n["ip"], username="heng", timeout=3,
+                           key_filename="/home/heng/.ssh/id_rsa")
+                _, stdout, _ = ssh.exec_command(CMD, timeout=3)
+                lines = stdout.read().decode().strip().split('\n')
+                ssh.close()
+
+            cpu_used = float(lines[0]) if lines else 0
+            mem_parts = lines[1].split() if len(lines) > 1 else ["0","0"]
+            mem_pct = float(mem_parts[0]) if mem_parts else 0
+            mem_mb  = int(mem_parts[1]) if len(mem_parts) > 1 else 0
+
+            svc_names = PROCS.get(n["id"], [])
+            svc_line = lines[2] if len(lines) > 2 else ""
+            svc_statuses = svc_line.split(",") if svc_line else []
+            all_svcs = ["tech-scanner","scanner_v4","qf-notifier","qf-cad-scanner","tsx_scanner","signal_fusion","ib-executor","quant-courier","notify-worker","quantforce-health"]
+            svc_map = {all_svcs[i]: svc_statuses[i].strip() if i < len(svc_statuses) else "unknown" for i in range(len(all_svcs))}
+            procs = [{"name": s, "active": svc_map.get(s,"unknown") == "active"} for s in svc_names]
+            results.append({
+                **n,
+                "alive":   True,
+                "cpu_pct": round(cpu_used, 1),
+                "mem_pct": round(mem_pct, 1),
+                "mem_mb":  mem_mb,
+                "procs":   procs,
+            })
+        except Exception as e:
+            results.append({**n, "alive": False, "cpu_pct": 0, "mem_pct": 0, "mem_mb": 0})
+
+    return results
+
 def get_dashboard_data() -> dict:
     now = datetime.now(ET)
 
@@ -222,6 +370,7 @@ def get_dashboard_data() -> dict:
         "nodes":         nodes,
         "signals":       signal_data,
         "bmo_positions": get_bmo_positions(),
+        "node_stats": get_node_stats(),
         "accounts": {
             "ib_cash": {
                 "balance": 1200,

@@ -8,7 +8,7 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: #f5f7fa; color: #1a2840; font-family: 'IBM Plex Sans', 'Arial', sans-serif; min-height: 100vh; }
 
-  .header { background: linear-gradient(135deg, #0a1628, #0d2040, #e8edf5); border-bottom: 1px solid #d0d8e4; padding: 20px 28px 0; }
+  .header { background: linear-gradient(135deg, #e8edf5, #d0d8f0, #f5f7fa); border-bottom: 1px solid #d0d8e4; padding: 20px 28px 0; }
   .header-top { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
   .logo { width: 36px; height: 36px; background: linear-gradient(135deg, #00aa55, #0066cc); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
   .title { font-size: 20px; font-weight: 700; color: #0a1628; letter-spacing: 2px; }
@@ -165,23 +165,66 @@
     </div>
 
     <div class="card">
-      <div class="label-sec">▸ 邮件信号预览（手动执行阶段）</div>
-      <div class="email-box">
-        <div class="c-green">═══════════════════════════════════════</div>
-        <div class="c-blue">📊 QuantForce Labs — 交易信号通知</div>
-        <div class="c-green">═══════════════════════════════════════</div>
-        <div class="c-gray">账户：IB USD 现金账户  |  2026-04-26 14:32</div>
-        <br>
-        <div><span class="c-gray">标的：</span><span class="c-white">ACMR（美元）</span></div>
-        <div><span class="c-gray">方向：</span><span class="c-green">▲ 多头 BUY</span></div>
-        <div><span class="c-gray">仓位：</span><span class="c-white">$400 USD（XX股）</span></div>
-        <div><span class="c-gray">买入：</span><span class="c-white">$XX.XX（限价）</span></div>
-        <div><span class="c-gray">止损：</span><span class="c-red">$XX.XX（-X.X%）</span></div>
-        <div><span class="c-gray">止盈：</span><span class="c-green">$XX.XX（+X.X%）</span></div>
-        <div><span class="c-gray">盈亏比：</span><span class="c-orange">1 : 5.0</span><span class="c-gray">  |  置信度：</span><span class="c-blue">8.3/10</span></div>
-        <br>
-        <div class="c-green">✅ 三周期共振  ✅ RVOL 2.34  ✅ Groq 8.1</div>
-        <div class="c-orange">⚠️ 现金账户：T+1结算，当日可卖出，资金隔日可用</div>
+      <div class="label-sec">▸ 实时最强信号（IB美股 TOP4 · BMO加股 TOP2）</div>
+      <div id="top-signals-grid" style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-top:10px;">
+        <div style="text-align:center;color:#1a1a1a;font-size:11px;padding:20px 0;">加载中...</div>
+      </div>
+    </div>
+
+    <!-- 5节点实时算力 -->
+    <div style="margin-top:20px;">
+      <div class="label-sec">▸ 节点算力实时监控</div>
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:12px;">
+        <div style="background:#f0f4ff;border:1px solid #00aa8830;border-radius:10px;padding:12px;">
+          <div style="font-size:11px;font-weight:700;color:#006644;margin-bottom:2px;">.18 大脑</div>
+          <div style="font-size:10px;color:#1a1a1a;margin-bottom:4px;">192.168.0.18</div><div style="font-size:9px;color:#006644;margin-bottom:6px;">数据库 · 信号融合 · Grafana</div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:3px;"><span style="font-size:10px;color:#1a1a1a;">CPU</span><span id="ov-cpu-18" style="font-size:10px;color:#006644;">--</span></div>
+          <div style="background:#dde;border-radius:3px;height:4px;margin-bottom:6px;"><div id="ov-cpu-bar-18" style="background:#006644;height:4px;border-radius:3px;width:0%;transition:width 0.8s;"></div></div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:3px;"><span style="font-size:10px;color:#1a1a1a;">内存</span><span id="ov-mem-18" style="font-size:10px;color:#0055aa;">--</span></div>
+          <div style="background:#dde;border-radius:3px;height:4px;"><div id="ov-mem-bar-18" style="background:#0055aa;height:4px;border-radius:3px;width:0%;transition:width 0.8s;"></div></div>
+          <div id="ov-status-18" style="font-size:9px;color:#1a1a1a;margin-top:6px;text-align:center;">●离线</div>
+          <div id="ov-procs-18" style="margin-top:6px;display:flex;flex-wrap:wrap;gap:3px;"></div>
+        </div>
+        <div style="background:#f0f4ff;border:1px solid #00aa8830;border-radius:10px;padding:12px;">
+          <div style="font-size:11px;font-weight:700;color:#006644;margin-bottom:2px;">.11 执行</div>
+          <div style="font-size:10px;color:#1a1a1a;margin-bottom:4px;">192.168.0.11</div><div style="font-size:9px;color:#006644;margin-bottom:6px;">IB网关 · 订单执行 · ZMQ接单</div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:3px;"><span style="font-size:10px;color:#1a1a1a;">CPU</span><span id="ov-cpu-11" style="font-size:10px;color:#006644;">--</span></div>
+          <div style="background:#dde;border-radius:3px;height:4px;margin-bottom:6px;"><div id="ov-cpu-bar-11" style="background:#006644;height:4px;border-radius:3px;width:0%;transition:width 0.8s;"></div></div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:3px;"><span style="font-size:10px;color:#1a1a1a;">内存</span><span id="ov-mem-11" style="font-size:10px;color:#0055aa;">--</span></div>
+          <div style="background:#dde;border-radius:3px;height:4px;"><div id="ov-mem-bar-11" style="background:#0055aa;height:4px;border-radius:3px;width:0%;transition:width 0.8s;"></div></div>
+          <div id="ov-status-11" style="font-size:9px;color:#1a1a1a;margin-top:6px;text-align:center;">●离线</div>
+          <div id="ov-procs-11" style="margin-top:6px;display:flex;flex-wrap:wrap;gap:3px;"></div>
+        </div>
+        <div style="background:#f0f4ff;border:1px solid #ff880030;border-radius:10px;padding:12px;">
+          <div style="font-size:11px;font-weight:700;color:#cc6600;margin-bottom:2px;">.143 计算</div>
+          <div style="font-size:10px;color:#1a1a1a;margin-bottom:4px;">192.168.0.143</div><div style="font-size:9px;color:#cc6600;margin-bottom:6px;">技术扫描 · 新闻扫描 · 邮件通知</div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:3px;"><span style="font-size:10px;color:#1a1a1a;">CPU</span><span id="ov-cpu-143" style="font-size:10px;color:#006644;">--</span></div>
+          <div style="background:#dde;border-radius:3px;height:4px;margin-bottom:6px;"><div id="ov-cpu-bar-143" style="background:#006644;height:4px;border-radius:3px;width:0%;transition:width 0.8s;"></div></div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:3px;"><span style="font-size:10px;color:#1a1a1a;">内存</span><span id="ov-mem-143" style="font-size:10px;color:#0055aa;">--</span></div>
+          <div style="background:#dde;border-radius:3px;height:4px;"><div id="ov-mem-bar-143" style="background:#0055aa;height:4px;border-radius:3px;width:0%;transition:width 0.8s;"></div></div>
+          <div id="ov-status-143" style="font-size:9px;color:#1a1a1a;margin-top:6px;text-align:center;">●离线</div>
+          <div id="ov-procs-143" style="margin-top:6px;display:flex;flex-wrap:wrap;gap:3px;"></div>
+        </div>
+        <div style="background:#f0f4ff;border:1px solid #aa44ff30;border-radius:10px;padding:12px;">
+          <div style="font-size:11px;font-weight:700;color:#7722cc;margin-bottom:2px;">.101 哨兵</div>
+          <div style="font-size:10px;color:#1a1a1a;margin-bottom:4px;">192.168.0.101 · L406MA / N5000</div><div style="font-size:9px;color:#7722cc;margin-bottom:6px;">风控网关 · Grafana · SSH监控</div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:3px;"><span style="font-size:10px;color:#1a1a1a;">CPU</span><span id="ov-cpu-101" style="font-size:10px;color:#006644;">--</span></div>
+          <div style="background:#dde;border-radius:3px;height:4px;margin-bottom:6px;"><div id="ov-cpu-bar-101" style="background:#006644;height:4px;border-radius:3px;width:0%;transition:width 0.8s;"></div></div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:3px;"><span style="font-size:10px;color:#1a1a1a;">内存</span><span id="ov-mem-101" style="font-size:10px;color:#0055aa;">--</span></div>
+          <div style="background:#dde;border-radius:3px;height:4px;"><div id="ov-mem-bar-101" style="background:#0055aa;height:4px;border-radius:3px;width:0%;transition:width 0.8s;"></div></div>
+          <div id="ov-status-101" style="font-size:9px;color:#1a1a1a;margin-top:6px;text-align:center;">●离线</div>
+          <div id="ov-procs-101" style="margin-top:6px;display:flex;flex-wrap:wrap;gap:3px;"></div>
+        </div>
+        <div style="background:#f0f4ff;border:1px solid #ff448830;border-radius:10px;padding:12px;">
+          <div style="font-size:11px;font-weight:700;color:#cc2255;margin-bottom:2px;">.102 信使</div>
+          <div style="font-size:10px;color:#1a1a1a;margin-bottom:4px;">192.168.0.102 · L410M / N4020</div><div style="font-size:9px;color:#cc2255;margin-bottom:6px;">交易通知 · 信号播报 · 消息分发</div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:3px;"><span style="font-size:10px;color:#1a1a1a;">CPU</span><span id="ov-cpu-102" style="font-size:10px;color:#006644;">--</span></div>
+          <div style="background:#dde;border-radius:3px;height:4px;margin-bottom:6px;"><div id="ov-cpu-bar-102" style="background:#006644;height:4px;border-radius:3px;width:0%;transition:width 0.8s;"></div></div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:3px;"><span style="font-size:10px;color:#1a1a1a;">内存</span><span id="ov-mem-102" style="font-size:10px;color:#0055aa;">--</span></div>
+          <div style="background:#dde;border-radius:3px;height:4px;"><div id="ov-mem-bar-102" style="background:#0055aa;height:4px;border-radius:3px;width:0%;transition:width 0.8s;"></div></div>
+          <div id="ov-status-102" style="font-size:9px;color:#1a1a1a;margin-top:6px;text-align:center;">●离线</div>
+          <div id="ov-procs-102" style="margin-top:6px;display:flex;flex-wrap:wrap;gap:3px;"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -388,7 +431,7 @@
         <span class="c-gray" style="font-size:20px;">→</span>
         <div class="lora-step">各节点订阅更新</div>
       </div>
-      <div style="margin-top:12px;font-size:11px;color:#6b7fa3;">ZMQ端口：训练节点 → :5560 PULL(.11) → FedAvg → :5561 PUB(.18) → 各节点SUB</div>
+      <div style="margin-top:12px;font-size:11px;color:#1a1a1a;">ZMQ端口：训练节点 → :5560 PULL(.11) → FedAvg → :5561 PUB(.18) → 各节点SUB</div>
     </div>
   </div>
 
@@ -410,10 +453,10 @@
           <div class="label-sec" style="margin-bottom:12px;">▸ 接口规范（Python）</div>
           <div class="code-box">
             <span style="color:#cc6600;">class</span> <span style="color:#0066cc;">StrategyPlugin</span>(<span style="color:#cc6600;">ABC</span>):<br>
-            &nbsp;&nbsp;<span style="color:#6b7fa3;">plugin_id: str</span><br>
-            &nbsp;&nbsp;<span style="color:#6b7fa3;">asset_class: str</span><br>
-            &nbsp;&nbsp;<span style="color:#6b7fa3;">account: str</span><br>
-            &nbsp;&nbsp;<span style="color:#6b7fa3;">max_position: float</span><br>
+            &nbsp;&nbsp;<span style="color:#1a1a1a;">plugin_id: str</span><br>
+            &nbsp;&nbsp;<span style="color:#1a1a1a;">asset_class: str</span><br>
+            &nbsp;&nbsp;<span style="color:#1a1a1a;">account: str</span><br>
+            &nbsp;&nbsp;<span style="color:#1a1a1a;">max_position: float</span><br>
             <br>
             &nbsp;&nbsp;<span style="color:#cc6600;">@abstractmethod</span><br>
             &nbsp;&nbsp;<span style="color:#cc6600;">def</span> <span style="color:#00aa55;">generate_signal</span>(self, data)<br>
@@ -459,12 +502,12 @@
         <div class="plugin-row">
           <div class="plugin-dot" style="background:#d0d8e4;"></div>
           <div style="flex:1;"><div class="fs13 fw7 c-white">期权卖方 v1</div><div class="fs10 c-gray">IB保证金（稳定后）</div></div>
-          <div style="background:#ffffff10;color:#6b7fa3;border-radius:4px;padding:3px 10px;font-size:10px;">未来</div>
+          <div style="background:#ffffff10;color:#1a1a1a;border-radius:4px;padding:3px 10px;font-size:10px;">未来</div>
         </div>
         <div class="plugin-row">
           <div class="plugin-dot" style="background:#d0d8e4;"></div>
           <div style="flex:1;"><div class="fs13 fw7 c-white">做空动量 v1</div><div class="fs10 c-gray">IB保证金（双向）</div></div>
-          <div style="background:#ffffff10;color:#6b7fa3;border-radius:4px;padding:3px 10px;font-size:10px;">未来</div>
+          <div style="background:#ffffff10;color:#1a1a1a;border-radius:4px;padding:3px 10px;font-size:10px;">未来</div>
         </div>
       </div>
     </div>
@@ -508,11 +551,11 @@
 
     <div class="phase-row">
       <div style="display:flex;flex-direction:column;align-items:center;">
-        <div class="phase-num" style="background:#d0d8e4;border:2px solid #d0d8e4;color:#6b7fa3;">3</div>
+        <div class="phase-num" style="background:#d0d8e4;border:2px solid #d0d8e4;color:#1a1a1a;">3</div>
         <div class="phase-line"></div>
       </div>
       <div class="phase-card">
-        <div style="display:flex;align-items:center;"><div class="fs13 fw7 c-white">Phase 3：回测系统</div><span class="phase-badge" style="background:#ffffff10;color:#6b7fa3;">规划中</span></div>
+        <div style="display:flex;align-items:center;"><div class="fs13 fw7 c-white">Phase 3：回测系统</div><span class="phase-badge" style="background:#ffffff10;color:#1a1a1a;">规划中</span></div>
         <div class="phase-items">
           <div class="phase-item">· 事件驱动回测引擎</div>
           <div class="phase-item">· 历史数据接入（1年/1分钟）</div>
@@ -525,11 +568,11 @@
 
     <div class="phase-row">
       <div style="display:flex;flex-direction:column;align-items:center;">
-        <div class="phase-num" style="background:#d0d8e4;border:2px solid #d0d8e4;color:#6b7fa3;">4</div>
+        <div class="phase-num" style="background:#d0d8e4;border:2px solid #d0d8e4;color:#1a1a1a;">4</div>
         <div class="phase-line"></div>
       </div>
       <div class="phase-card">
-        <div style="display:flex;align-items:center;"><div class="fs13 fw7 c-white">Phase 4：联邦进化</div><span class="phase-badge" style="background:#ffffff10;color:#6b7fa3;">规划中</span></div>
+        <div style="display:flex;align-items:center;"><div class="fs13 fw7 c-white">Phase 4：联邦进化</div><span class="phase-badge" style="background:#ffffff10;color:#1a1a1a;">规划中</span></div>
         <div class="phase-items">
           <div class="phase-item">· LoRA层定义（信号权重）</div>
           <div class="phase-item">· FedAvg聚合逻辑（.11）</div>
@@ -541,10 +584,10 @@
 
     <div class="phase-row">
       <div style="display:flex;flex-direction:column;align-items:center;">
-        <div class="phase-num" style="background:#d0d8e4;border:2px solid #d0d8e4;color:#6b7fa3;">5</div>
+        <div class="phase-num" style="background:#d0d8e4;border:2px solid #d0d8e4;color:#1a1a1a;">5</div>
       </div>
       <div class="phase-card">
-        <div style="display:flex;align-items:center;"><div class="fs13 fw7 c-white">Phase 5：多策略扩展</div><span class="phase-badge" style="background:#ffffff10;color:#6b7fa3;">未来</span></div>
+        <div style="display:flex;align-items:center;"><div class="fs13 fw7 c-white">Phase 5：多策略扩展</div><span class="phase-badge" style="background:#ffffff10;color:#1a1a1a;">未来</span></div>
         <div class="phase-items">
           <div class="phase-item">· 均值回归插件</div>
           <div class="phase-item">· 财报套利插件</div>
@@ -590,6 +633,24 @@ async function refreshLive() {
       el.style.background = msColor + "20";
     });
 
+
+    // 总览节点算力
+    const ovMap = {".11":"11",".18":"18",".143":"143",".101":"101",".102":"102"};
+    const svcLabel = {"signal_fusion":"信号融合","quantforce-health":"健康巡检","qf-panel":"面板API","ib-executor":"IB执行","qf-llm-scorer":"LLM评分","tech-scanner":"技术扫描","scanner_v4":"新闻扫描","qf-notifier":"邮件通知","qf-cad-scanner":"CAD扫描","tsx_scanner":"TSX扫描","grafana-server":"Grafana","quant-courier":"交易通知","notify-worker":"消息推送"};
+    (d.node_stats||[]).forEach(n => {
+      const nid = ovMap[n.id]||n.id.replace('.','');
+      const cpu = n.alive?n.cpu_pct:null, mem = n.alive?n.mem_pct:null;
+      const se=document.getElementById('ov-status-'+nid);
+      const ce=document.getElementById('ov-cpu-'+nid), cb=document.getElementById('ov-cpu-bar-'+nid);
+      const me=document.getElementById('ov-mem-'+nid), mb=document.getElementById('ov-mem-bar-'+nid);
+      if(se){se.textContent=n.alive?'● 在线':'● 离线';se.style.color=n.alive?'#006644':'#cc2200';}
+      const pe=document.getElementById('ov-procs-'+nid);
+      if(pe&&n.procs){
+        pe.innerHTML=n.procs.map(p=>`<span style="font-size:9px;padding:2px 5px;border-radius:3px;background:${p.active?'#f0fff4':'#fff0ee'};color:${p.active?'#006644':'#cc2200'};">${svcLabel[p.name]||p.name}</span>`).join('');
+      }
+      if(ce&&cpu!==null){ce.textContent=cpu.toFixed(1)+'%';ce.style.color=cpu>80?'#cc2200':cpu>50?'#cc6600':'#006644';if(cb){cb.style.width=Math.min(cpu,100)+'%';cb.style.background=cpu>80?'#cc2200':cpu>50?'#cc6600':'#006644';}}else if(ce){ce.textContent='离线';ce.style.color='#cc2200';}
+      if(me&&mem!==null){me.textContent=mem.toFixed(0)+'%';me.style.color=mem>80?'#cc2200':mem>60?'#cc6600':'#0055aa';if(mb){mb.style.width=Math.min(mem,100)+'%';mb.style.background=mem>80?'#cc2200':mem>60?'#cc6600':'#0055aa';}}else if(me){me.textContent='离线';me.style.color='#cc2200';}
+    });
     // 节点在线数
     const alive = (d.nodes||[]).filter(n=>n.alive).length;
     const total = (d.nodes||[]).length;
@@ -623,27 +684,114 @@ async function refreshLive() {
       const overview = document.getElementById("panel-overview");
       if(overview) overview.appendChild(liveDiv);
     }
+    // TOP信号卡片
+    const allSigs = d.signals?.recent || [];
+    const usdTop = allSigs.filter(s=>(s.currency||s.features?.currency)==='USD')
+      .sort((a,b)=>parseFloat(b.gpu_score||b.score||0)-parseFloat(a.gpu_score||a.score||0))
+      .slice(0,4);
+    const cadTop = allSigs.filter(s=>(s.currency||s.features?.currency)==='CAD')
+      .sort((a,b)=>parseFloat(b.gpu_score||b.score||0)-parseFloat(a.gpu_score||a.score||0))
+      .slice(0,2);
+    const topGrid = document.getElementById('top-signals-grid');
+    if(topGrid) {
+      const renderCard = (sg, isCad) => {
+        if(!sg) return `<div style="background:#f8faff;border:1px dashed #d0d8e4;border-radius:10px;padding:12px;display:flex;align-items:center;justify-content:center;color:#1a1a1a;font-size:11px;">暂无信号</div>`;
+        const gpu = parseFloat(sg.gpu_score||0).toFixed(1);
+        const score = parseFloat(sg.score||0).toFixed(1);
+        const t = new Date(sg.created_at).toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit"});
+        const price = sg.price ? parseFloat(sg.price) : null;
+        const sl_price = sg.stop_loss ? parseFloat(sg.stop_loss).toFixed(2) : '--';
+        const tp_price = sg.take_profit ? parseFloat(sg.take_profit).toFixed(2) : '--';
+        const sl_pct = sg.stop_loss_pct ? parseFloat(sg.stop_loss_pct).toFixed(1) : '--';
+        const tp_pct = sg.take_profit_pct ? parseFloat(sg.take_profit_pct).toFixed(1) : '--';
+        const rvol = sg.rvol ? parseFloat(sg.rvol).toFixed(2) : '--';
+        const rsi = sg.rsi ? parseFloat(sg.rsi).toFixed(1) : '--';
+        const ema9 = sg.ema9 ? parseFloat(sg.ema9).toFixed(2) : '--';
+        const ema20 = sg.ema20 ? parseFloat(sg.ema20).toFixed(2) : '--';
+        const vwap = sg.vwap ? parseFloat(sg.vwap).toFixed(2) : '--';
+        const open = sg.features?.open ? parseFloat(sg.features.open).toFixed(2) : '--';
+        const priceStr = price ? price.toFixed(2) : '--';
+        const border = isCad ? '#cc220040' : '#00aa5530';
+        const accent = isCad ? '#cc2200' : '#00aa55';
+        const badge = isCad ? 'CAD' : 'USD';
+        const badgeBg = isCad ? '#fff0ee' : '#f0fff4';
+        const cur = isCad ? 'C$' : '$';
+        return `<div style="background:#fff;border:1px solid ${border};border-radius:10px;padding:12px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <span style="font-weight:700;color:#0a1628;font-size:13px;">${sg.symbol}</span>
+            <span style="background:${badgeBg};color:${accent};font-size:9px;padding:2px 6px;border-radius:4px;">${badge}</span>
+          </div>
+          <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:8px;">
+            <span style="font-size:20px;font-weight:700;color:#0a1628;">${cur}${priceStr}</span>
+            <span style="font-size:13px;font-weight:700;color:#006644;">${sg.shares||"--"}股</span>
+            <span style="font-size:11px;color:#1a1a1a;">${cur}${sg.position_value?parseFloat(sg.position_value).toFixed(0):"--"}</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;margin-bottom:8px;">
+            <div style="background:#f8faff;border-radius:4px;padding:3px 6px;"><div style="color:#1a1a1a;font-size:8px;">GPU评分</div><b style="color:#880088;font-size:11px;">${gpu}</b></div>
+            <div style="background:#f8faff;border-radius:4px;padding:3px 6px;"><div style="color:#1a1a1a;font-size:8px;">LLM评分</div><b style="color:#0066cc;font-size:11px;">${score}</b></div>
+            <div style="background:#fff8f0;border-radius:4px;padding:3px 6px;"><div style="color:#1a1a1a;font-size:8px;">RVOL</div><b style="color:#cc6600;font-size:11px;">${rvol}x</b></div>
+            <div style="background:#f0f0ff;border-radius:4px;padding:3px 6px;"><div style="color:#1a1a1a;font-size:8px;">RSI</div><b style="color:#6633cc;font-size:11px;">${rsi}</b></div>
+            <div style="background:#f0fff4;border-radius:4px;padding:3px 6px;"><div style="color:#1a1a1a;font-size:8px;">EMA9</div><b style="color:#006644;font-size:11px;">${ema9}</b></div>
+            <div style="background:#f0fff4;border-radius:4px;padding:3px 6px;"><div style="color:#1a1a1a;font-size:8px;">EMA20</div><b style="color:#006644;font-size:11px;">${ema20}</b></div>
+            <div style="background:#f0f4ff;border-radius:4px;padding:3px 6px;"><div style="color:#1a1a1a;font-size:8px;">VWAP</div><b style="color:#0055aa;font-size:11px;">${vwap}</b></div>
+            <div style="background:#f0f4ff;border-radius:4px;padding:3px 6px;"><div style="color:#1a1a1a;font-size:8px;">开盘价</div><b style="color:#0055aa;font-size:11px;">${open}</b></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;margin-bottom:6px;">
+            <div style="background:#fff0ee;border-radius:4px;padding:3px 6px;"><div style="color:#1a1a1a;font-size:8px;">止损价</div><b style="color:#cc2200;font-size:11px;">${cur}${sl_price}</b><span style="color:#cc2200;font-size:9px;"> ${sl_pct}%</span></div>
+            <div style="background:#f0fff4;border-radius:4px;padding:3px 6px;"><div style="color:#1a1a1a;font-size:8px;">止盈价</div><b style="color:#00aa55;font-size:11px;">${cur}${tp_price}</b><span style="color:#00aa55;font-size:9px;"> +${tp_pct}%</span></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
+            <div style="display:flex;gap:4px;flex-wrap:wrap;">
+              ${sg.in_whitelist ? `<span style="background:#f0fff4;color:#006644;font-size:9px;padding:2px 6px;border-radius:4px;">✓ 白名单 #${sg.dollar_volume_rank}</span>` : `<span style="background:#f8f8f8;color:#1a1a1a;font-size:9px;padding:2px 6px;border-radius:4px;">非白名单</span>`}
+              ${sg.consolidation_detail?.is_squeeze && sg.consolidation_detail?.is_breakout ? `<span style="background:#fff8e0;color:#cc6600;font-size:9px;padding:2px 6px;border-radius:4px;">🔥 横盘突破</span>` : sg.consolidation_detail?.is_squeeze ? `<span style="background:#f0f4ff;color:#0055aa;font-size:9px;padding:2px 6px;border-radius:4px;">⬜ 横盘压缩</span>` : ""}
+            </div>
+            <span style="color:#1a1a1a;font-size:9px;">${t}</span>
+          </div>
+        </div>`;
+      };
+      const cards = [
+        ...usdTop.map(s=>renderCard(s,false)),
+        ...[0,1].map(i=>renderCard(cadTop[i],true))
+      ];
+      while(cards.length < 6) cards.push(renderCard(null,false));
+      topGrid.innerHTML = cards.join('');
+    }
+
     const sigs = d.signals?.recent || [];
     const pos  = d.signals?.positions || [];
     liveDiv.innerHTML = `
-      <div style="font-size:12px;color:#6b7fa3;letter-spacing:2px;margin-bottom:14px">▸ 实时信号（最新5条）</div>
-      ${sigs.length ? sigs.map(sg => {
+      <div style="font-size:12px;color:#1a1a1a;letter-spacing:2px;margin-bottom:14px">▸ 实时信号（今日Tech全部）</div>
+      <div style="max-height:600px;overflow-y:auto;">${sigs.length ? sigs.map((sg, idx) => {
         const c=[sg.score,sg.llm_score,sg.gpu_score].map(x=>parseFloat(x)).filter(x=>!isNaN(x)&&x>0);
         const avg=c.length?(c.reduce((a,b)=>a+b,0)/c.length).toFixed(1):(parseFloat(sg.score)||0).toFixed(1);
         const t=new Date(sg.created_at).toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit"});
-        return `<div style="display:flex;gap:12px;align-items:center;padding:8px 0;border-bottom:1px solid #e8edf5;font-size:11px">
-          <span style="font-weight:700;color:#0a1628;width:60px">${sg.symbol}</span>
-          <span style="background:#00aa5520;color:#00aa55;border-radius:3px;padding:1px 8px">${avg}分</span>
-          <span style="color:#6b7fa3">${sg.signal_type}</span>
-          <span style="color:#6b7fa3;margin-left:auto">${t}</span>
-        </div>`;
-      }).join("") : '<div style="color:#6b7fa3;font-size:11px">暂无信号</div>'}
-      <div style="font-size:12px;color:#6b7fa3;letter-spacing:2px;margin:14px 0 10px">▸ IB现金持仓（T+1）</div>
+        return `<div style="background:${idx%2===0?'#f8faff':'#fff'};border:1px solid #dde5f0;border-radius:6px;padding:6px 10px;margin-bottom:4px;">
+  <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;">
+    <span style="color:#1a1a1a;font-size:9px;min-width:20px">#${idx+1}</span>
+    <span style="font-weight:700;color:#0a1628;font-size:12px;min-width:60px">${sg.symbol}</span>
+    <span style="background:#00aa5520;color:#00aa55;border-radius:3px;padding:1px 6px;font-size:10px">${avg}分</span>
+    ${sg.llm_score?'<span style="background:#0066cc15;color:#0066cc;border-radius:3px;padding:1px 5px;font-size:10px">LLM:'+parseFloat(sg.llm_score).toFixed(1)+'</span>':''}
+    ${sg.gpu_score?'<span style="background:#88008815;color:#880088;border-radius:3px;padding:1px 5px;font-size:10px">GPU:'+parseFloat(sg.gpu_score).toFixed(1)+'</span>':''}
+    <span style="margin-left:auto;color:#1a1a1a;font-size:10px">${t}</span>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(8,1fr);gap:3px;font-size:10px;">
+    <div style="background:#f0f4f8;border-radius:3px;padding:3px 6px;"><div style="color:#1a1a1a;font-size:8px">价格</div><b style="color:#0a1628">$${sg.price?parseFloat(sg.price).toFixed(2):'--'}</b></div>
+    <div style="background:#fff8f0;border-radius:3px;padding:3px 6px;"><div style="color:#1a1a1a;font-size:8px">RVOL</div><b style="color:#cc6600">${sg.rvol?parseFloat(sg.rvol).toFixed(2):'--'}x</b></div>
+    <div style="background:#f0f8ff;border-radius:3px;padding:3px 6px;"><div style="color:#1a1a1a;font-size:8px">MACD</div><b style="color:#0066cc">${sg.macd?parseFloat(sg.macd).toFixed(3):'--'}</b></div>
+    <div style="background:#f0f0ff;border-radius:3px;padding:3px 6px;"><div style="color:#1a1a1a;font-size:8px">RSI</div><b style="color:#6633cc">${sg.rsi?parseFloat(sg.rsi).toFixed(1):'--'}</b></div>
+    <div style="background:#f0f0ff;border-radius:3px;padding:3px 6px;"><div style="color:#1a1a1a;font-size:8px">EMA9</div><b style="color:#0066cc">${sg.ema9?parseFloat(sg.ema9).toFixed(2):'--'}</b></div>
+    <div style="background:#fff0f0;border-radius:3px;padding:3px 6px;"><div style="color:#1a1a1a;font-size:8px">止损</div><b style="color:#cc2200">$${sg.stop_loss?parseFloat(sg.stop_loss).toFixed(2):'--'}</b></div>
+    <div style="background:#f0fff4;border-radius:3px;padding:3px 6px;"><div style="color:#1a1a1a;font-size:8px">止盈</div><b style="color:#00aa55">$${sg.take_profit?parseFloat(sg.take_profit).toFixed(2):'--'}</b></div>
+    <div style="background:#f0f4f8;border-radius:3px;padding:3px 6px;"><div style="color:#1a1a1a;font-size:8px">仓位</div><b style="color:#0a1628">${sg.shares?sg.shares:'--'}股 $${sg.position_cad?parseFloat(sg.position_cad).toFixed(0):'--'}</b></div>
+  </div>
+</div>`
+      }).join("") : '<div style="color:#1a1a1a;font-size:11px">暂无信号</div>'}</div>
+      <div style="font-size:12px;color:#1a1a1a;letter-spacing:2px;margin:14px 0 10px">▸ IB现金持仓（T+1）</div>
       ${pos.length ? pos.map(p=>`<div style="display:flex;justify-content:space-between;font-size:11px;padding:6px 0;border-bottom:1px solid #e8edf5">
         <span style="color:#0a1628;font-weight:600">${p.symbol}</span>
         <span style="color:#0066cc">$${p.amount_usd}</span>
         <span style="color:#6b7fa3">结算:${p.settle_date}</span>
-      </div>`).join("") : '<div style="color:#6b7fa3;font-size:11px">无持仓</div>'}
+      </div>`).join("") : '<div style="color:#1a1a1a;font-size:11px">无持仓</div>'}
     `;
   } catch(e) {
     console.warn("API离线，使用静态数据", e);
@@ -658,14 +806,14 @@ setInterval(refreshLive, 15000);
 <div id="live-bmo" style="background:#ffffff;border:1px solid #cc220040;border-radius:10px;padding:20px;margin-top:20px">
   <div style="font-size:12px;color:#cc2200;letter-spacing:2px;margin-bottom:14px">▸ BMO RESP 持仓管理</div>
   <div style="background:#f0f4f8;border-radius:8px;padding:16px;margin-bottom:16px">
-    <div style="font-size:11px;color:#6b7fa3;margin-bottom:12px">录入买入</div>
+    <div style="font-size:11px;color:#1a1a1a;margin-bottom:12px">录入买入</div>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px">
-      <div><div style="font-size:10px;color:#6b7fa3;margin-bottom:4px">标的</div><input id="bs" placeholder="SU.TO" style="width:100%;background:#ffffff;border:1px solid #d0d8e4;border-radius:4px;padding:6px;color:#1a2840;font-size:12px"></div>
-      <div><div style="font-size:10px;color:#6b7fa3;margin-bottom:4px">股数</div><input id="bq" type="number" placeholder="30" style="width:100%;background:#ffffff;border:1px solid #d0d8e4;border-radius:4px;padding:6px;color:#1a2840;font-size:12px"></div>
-      <div><div style="font-size:10px;color:#6b7fa3;margin-bottom:4px">买入价(CAD)</div><input id="bp" type="number" step="0.01" placeholder="50.00" style="width:100%;background:#ffffff;border:1px solid #d0d8e4;border-radius:4px;padding:6px;color:#1a2840;font-size:12px"></div>
-      <div><div style="font-size:10px;color:#6b7fa3;margin-bottom:4px">止损价(留空自动-3%)</div><input id="bsl" type="number" step="0.01" placeholder="自动" style="width:100%;background:#ffffff;border:1px solid #d0d8e4;border-radius:4px;padding:6px;color:#1a2840;font-size:12px"></div>
-      <div><div style="font-size:10px;color:#6b7fa3;margin-bottom:4px">止盈价(留空自动+15%)</div><input id="bt" type="number" step="0.01" placeholder="自动" style="width:100%;background:#ffffff;border:1px solid #d0d8e4;border-radius:4px;padding:6px;color:#1a2840;font-size:12px"></div>
-      <div><div style="font-size:10px;color:#6b7fa3;margin-bottom:4px">备注</div><input id="bn" placeholder="横盘突破30天" style="width:100%;background:#ffffff;border:1px solid #d0d8e4;border-radius:4px;padding:6px;color:#1a2840;font-size:12px"></div>
+      <div><div style="font-size:10px;color:#1a1a1a;margin-bottom:4px">标的</div><input id="bs" placeholder="SU.TO" style="width:100%;background:#ffffff;border:1px solid #d0d8e4;border-radius:4px;padding:6px;color:#1a2840;font-size:12px"></div>
+      <div><div style="font-size:10px;color:#1a1a1a;margin-bottom:4px">股数</div><input id="bq" type="number" placeholder="30" style="width:100%;background:#ffffff;border:1px solid #d0d8e4;border-radius:4px;padding:6px;color:#1a2840;font-size:12px"></div>
+      <div><div style="font-size:10px;color:#1a1a1a;margin-bottom:4px">买入价(CAD)</div><input id="bp" type="number" step="0.01" placeholder="50.00" style="width:100%;background:#ffffff;border:1px solid #d0d8e4;border-radius:4px;padding:6px;color:#1a2840;font-size:12px"></div>
+      <div><div style="font-size:10px;color:#1a1a1a;margin-bottom:4px">止损价(留空自动-3%)</div><input id="bsl" type="number" step="0.01" placeholder="自动" style="width:100%;background:#ffffff;border:1px solid #d0d8e4;border-radius:4px;padding:6px;color:#1a2840;font-size:12px"></div>
+      <div><div style="font-size:10px;color:#1a1a1a;margin-bottom:4px">止盈价(留空自动+15%)</div><input id="bt" type="number" step="0.01" placeholder="自动" style="width:100%;background:#ffffff;border:1px solid #d0d8e4;border-radius:4px;padding:6px;color:#1a2840;font-size:12px"></div>
+      <div><div style="font-size:10px;color:#1a1a1a;margin-bottom:4px">备注</div><input id="bn" placeholder="横盘突破30天" style="width:100%;background:#ffffff;border:1px solid #d0d8e4;border-radius:4px;padding:6px;color:#1a2840;font-size:12px"></div>
     </div>
     <button onclick="addBMO()" style="background:#cc2200;color:#0a1628;border:none;border-radius:6px;padding:8px 20px;font-size:12px;cursor:pointer">录入买入</button>
     <span id="bmsg" style="font-size:11px;margin-left:12px"></span>
@@ -710,15 +858,15 @@ async function loadBMO(){
       return '<div style="background:#f0f4f8;border-radius:8px;padding:14px;margin-bottom:10px;border:1px solid #cc220020">'+
         '<div style="display:flex;gap:12px;align-items:center;margin-bottom:10px">'+
         '<span style="font-weight:700;color:#0a1628;font-size:14px">'+p.symbol+'</span>'+
-        '<span style="color:#6b7fa3;font-size:11px">'+p.qty+'股</span>'+
+        '<span style="color:#1a1a1a;font-size:11px">'+p.qty+'股</span>'+
         '<span style="color:#cc2200;font-size:11px">持仓'+p.holding_days+'天</span>'+
-        '<span style="color:#6b7fa3;font-size:11px;margin-left:auto">'+p.entry_date+'</span></div>'+
+        '<span style="color:#1a1a1a;font-size:11px;margin-left:auto">'+p.entry_date+'</span></div>'+
         '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px">'+
         '<div style="background:#ffffff;border-radius:4px;padding:8px"><div style="font-size:9px;color:#6b7fa3">买入价</div><div style="font-size:13px;color:#1a2840">$'+p.entry_price+'</div></div>'+
         '<div style="background:#ffffff;border-radius:4px;padding:8px"><div style="font-size:9px;color:#6b7fa3">成本</div><div style="font-size:13px;color:#1a2840">$'+p.cost_cad+' CAD</div></div>'+
         '<div style="background:#cc220010;border-radius:4px;padding:8px"><div style="font-size:9px;color:#6b7fa3">止损</div><div style="font-size:13px;color:#cc2200">$'+p.stop_price+' (-'+sl_pct+'%)</div></div>'+
         '<div style="background:#00aa5510;border-radius:4px;padding:8px"><div style="font-size:9px;color:#6b7fa3">止盈</div><div style="font-size:13px;color:#00aa55">$'+p.target_price+' (+'+tp_pct+'%)</div></div></div>'+
-        (p.notes?'<div style="font-size:10px;color:#6b7fa3;margin-bottom:8px">'+p.notes+'</div>':'')+
+        (p.notes?'<div style="font-size:10px;color:#1a1a1a;margin-bottom:8px">'+p.notes+'</div>':'')+
         '<button onclick="closeBMO('+p.id+',''+p.symbol+'')" style="background:#d0d8e4;color:#1a2840;border:none;border-radius:4px;padding:5px 14px;font-size:11px;cursor:pointer">平仓</button>'+
         '</div>';
     }).join('');
